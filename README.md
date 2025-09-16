@@ -12,7 +12,7 @@ OxyLabs account with residential/mobile proxies traffic available
 - Create a directory where Chrome will be storing its data - by default, it is /var/tmp/cache. Change if needed in .env
   file - child directories will be created automatically at start-up.
 - Set Redis credentials if needed in .env file
-- Add OxyLabs username/password into .env' PROXY_USERNAME/PROXY_PASSWORD
+- Add OxyLabs username/password into .env `PROXY_USERNAME/PROXY_PASSWORD`
 
 # Running
 

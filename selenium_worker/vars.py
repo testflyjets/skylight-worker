@@ -18,9 +18,13 @@ task_page_urls = {
 }
 
 task_type_classes = {
-    WorkerType.Montgomery: [MontgomeryCountyAirParkTask, MontgomeryCountyAirParkTaskRQ,
-                            MontgomeryCountyAirParkTaskRQEncoder, MontgomeryCountyAirParkTaskRS,
-                            MontgomeryCountyAirParkTaskRSEncoder]
+    WorkerType.Montgomery: [
+        MontgomeryCountyAirParkTask, 
+        MontgomeryCountyAirParkTaskRQ,
+        MontgomeryCountyAirParkTaskRQEncoder, 
+        MontgomeryCountyAirParkTaskRS,
+        MontgomeryCountyAirParkTaskRSEncoder
+    ]
 }
 
 task_type_names = {
