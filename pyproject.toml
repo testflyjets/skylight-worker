@@ -1,0 +1,18 @@
+[project]
+name = "selenium_worker"
+version = "0.1.0"
+authors = [
+    { name = "Daniel Protopopov", email = "daniel@vyyer.com" },
+]
+description = "A set of workers that process DMV states via Selenium (Chrome or Firefox)"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = { file = "LICENSE" }
+
+[project.urls]
+Homepage = "https://gitlab.com/dmv-check/selenium_worker"
+Issues = "https://gitlab.com/dmv-check/selenium_worker"

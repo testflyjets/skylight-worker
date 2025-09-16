@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "name": "Chrome Proxy",
+  "permissions": [
+    "proxy",
+    "tabs",
+    "unlimitedStorage",
+    "storage",
+    "webRequest",
+    "webRequestAuthProvider",
+    "browsingData",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "declarative_net_request": {
+    "rule_resources": []
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
+        
