@@ -42,7 +42,6 @@ app = celery.Celery(
 )
 print('Celery application was created successfully')
 
-
 @signals.worker_process_init.connect
 def init(**args):
     global display
@@ -98,6 +97,7 @@ def init(**args):
         task_service.init_browser(cfg.GeneralSettings.browser_driver_type(), task_type)
         task_service.driver.set_page_load_timeout(20.0)
         task_service.driver.switch_to.window(task_service.driver.current_window_handle)
+        
         print(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-UP BEGIN ===')
         task_service.tearup(initial_url=initial_url, downloads_path=cfg.CacheSettings.DOWNLOADS_PATH,
                             rds=rds, recaptcha_score_threshold=minimum_recaptcha_score)
@@ -200,8 +200,7 @@ def should_restart(**args):
     return None
 
 
-@app.task(
-    name='task_worker.work', bind=True, TASK_REJECT_ON_WORKER_LOST=cfg.task_reject_on_worker_lost)
+@app.task(name='task_worker.work', bind=True, TASK_REJECT_ON_WORKER_LOST=cfg.task_reject_on_worker_lost)
 def work(self, request, job_uid: str):
     global display
     global task_service

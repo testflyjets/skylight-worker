@@ -3,7 +3,8 @@ from json import JSONEncoder
 
 class WorkTaskRQ:
     Type: str = ''
-
+    SessionUID: str = ''
+    
     # Task retry parameters
     Countdown: int = 0
     DefaultRetryDelay: int = 10

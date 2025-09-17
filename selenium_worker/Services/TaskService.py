@@ -24,12 +24,15 @@ from selenium_worker.Responses.WorkTaskRS import WorkTaskRS
 from selenium_worker.enums import BrowserDriverType
 from selenium_worker.utils import get_actual_ip_address, get_proxied_ip_address
 
+# Human-like typing delay constants
+TYPING_DELAY_FROM = 0.10
+TYPING_DELAY_TO = 0.35
+
 minimum_recaptcha_scores = {
     MontgomeryCountyAirParkTaskRQ: 3
 }
 
 from selenium_worker.utils import check_recaptcha_score
-
 
 class TaskService:
     RQ: WorkTaskRQ
@@ -382,7 +385,11 @@ class TaskService:
         self.RS.Logs.append(log_message)
         self.RS.Error = log_message
 
-    def human_like_typing(self, element: WebElement, text: str, delay_from: float = 0.25, delay_to: float = 0.55):
+    def human_like_typing(self, 
+            element: WebElement, 
+            text: str, 
+            delay_from: float = TYPING_DELAY_FROM, 
+            delay_to: float = TYPING_DELAY_TO):
         for char in text:
             time.sleep(random.uniform(delay_from, delay_to))
             element.send_keys(char)

@@ -15,7 +15,6 @@ from selenium_worker.constants import STAGE_OBTAINED_PAGE
 from selenium_worker.exceptions import RetryException
 from selenium_worker.utils import get_date
 
-
 class MontgomeryCountyAirParkTask(TaskService):
     RQ: MontgomeryCountyAirParkTaskRQ
     RS: MontgomeryCountyAirParkTaskRS
@@ -25,9 +24,16 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         # Enters the data and prepares the state for data processing
 
-    def tearup(self, initial_url: str, downloads_path: str, rds: Optional[Redis] = None,
-               attempts: Optional[int] = 3, print_ip_addresses: bool = True, max_attempts: int = 10,
-               recaptcha_score_threshold: int = 7, proxy_variation: Optional[str] = None) -> list[str]:
+    def tearup(self, 
+        initial_url: str, 
+        downloads_path: str, 
+        rds: Optional[Redis] = None,
+        attempts: Optional[int] = 3, 
+        print_ip_addresses: bool = True, 
+        max_attempts: int = 10,
+        recaptcha_score_threshold: int = 7, 
+        proxy_variation: Optional[str] = None) -> list[str]:
+        
         for retry in range(attempts):
             self.log(f'Retrying to get to Maryland page during tearup: {retry + 1} out of {attempts}')
             changed = self.change_proxy_repeat(print_ip_addresses, max_attempts,
@@ -52,9 +58,16 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         raise Exception(f'Failed to obtain Maryland page during tearup after {attempts} attempts')
 
-    def teardown(self, initial_url: str, downloads_path: str = None, rds: Redis | None = None,
-                 attempts: Optional[int] = 3, print_ip_addresses: bool = True, max_attempts: int = 10,
-                 recaptcha_score_threshold: int = 7, proxy_variation: Optional[str] = None) -> list[str]:
+    def teardown(self, 
+            initial_url: str, 
+            downloads_path: str = None, 
+            rds: Redis | None = None,
+            attempts: Optional[int] = 3, 
+            print_ip_addresses: bool = True, 
+            max_attempts: int = 10,
+            recaptcha_score_threshold: int = 7, 
+            proxy_variation: Optional[str] = None) -> list[str]:
+        
         for retry in range(attempts):
             self.log(f'Retrying to get to Maryland page during teardown: {retry + 1} out of {attempts}')
             changed = self.change_proxy_repeat(print_ip_addresses, max_attempts, recaptcha_score_threshold,
@@ -122,7 +135,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'First Name')):
-                self.log('First name field is visible at ' + self.driver.current_url)
+                # self.log('First name field is visible at ' + self.driver.current_url)
                 first_name_element = self.SB.find_element(By.ID, 'First Name')
             else:
                 raise Exception('First name field is not visible')
@@ -132,7 +145,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering first name into the field')
+            # self.log('Entering first name into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", first_name_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(first_name_element)
@@ -145,7 +158,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'Last Name')):
-                self.log('Last name field is visible at ' + self.driver.current_url)
+                # self.log('Last name field is visible at ' + self.driver.current_url)
                 last_name_element = self.SB.find_element(By.ID, 'Last Name')
             else:
                 raise Exception('Last name field is not visible')
@@ -155,7 +168,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering last name into the field')
+            # self.log('Entering last name into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", last_name_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(last_name_element)
@@ -168,7 +181,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'email')):
-                self.log('E-mail address field is visible at ' + self.driver.current_url)
+                # self.log('E-mail address field is visible at ' + self.driver.current_url)
                 email_address_element = self.SB.find_element(By.ID, 'email')
             else:
                 raise Exception('E-mail address field is not visible')
@@ -178,7 +191,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering e-mail address into the field')
+            # self.log('Entering e-mail address into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", email_address_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(email_address_element)
@@ -191,7 +204,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'Phone Number')):
-                self.log('Phone number field is visible at ' + self.driver.current_url)
+                # self.log('Phone number field is visible at ' + self.driver.current_url)
                 phone_number_element = self.SB.find_element(By.ID, 'Phone Number')
             else:
                 raise Exception('Phone number field is not visible')
@@ -201,7 +214,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering phone number into the field')
+            # self.log('Entering phone number into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", phone_number_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(phone_number_element)
@@ -214,7 +227,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'Street Address Cross Streets')):
-                self.log('Street address field is visible at ' + self.driver.current_url)
+                # self.log('Street address field is visible at ' + self.driver.current_url)
                 street_address_element = self.SB.find_element(By.ID, 'Street Address Cross Streets')
             else:
                 raise Exception('Street address field is not visible')
@@ -224,7 +237,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering street address into the field')
+            # self.log('Entering street address into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", street_address_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(street_address_element)
@@ -237,7 +250,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'City')):
-                self.log('City address field is visible at ' + self.driver.current_url)
+                # self.log('City address field is visible at ' + self.driver.current_url)
                 city_address_element = self.SB.find_element(By.ID, 'City')
             else:
                 raise Exception('City address field is not visible')
@@ -247,7 +260,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering city address into the field')
+            # self.log('Entering city address into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", city_address_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(city_address_element)
@@ -260,7 +273,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'State')):
-                self.log('State address field is visible at ' + self.driver.current_url)
+                # self.log('State address field is visible at ' + self.driver.current_url)
                 state_address_element = self.SB.find_element(By.ID, 'State')
             else:
                 raise Exception('State address field is not visible')
@@ -270,7 +283,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering state address into the field')
+            # self.log('Entering state address into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", state_address_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(state_address_element)
@@ -283,7 +296,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'ZIP')):
-                self.log('ZIP address field is visible at ' + self.driver.current_url)
+                # self.log('ZIP address field is visible at ' + self.driver.current_url)
                 zip_address_element = self.SB.find_element(By.ID, 'ZIP')
             else:
                 raise Exception('ZIP address field is not visible')
@@ -293,7 +306,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering ZIP address into the field')
+            # self.log('Entering ZIP address into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", zip_address_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(zip_address_element)
@@ -321,7 +334,7 @@ class MontgomeryCountyAirParkTask(TaskService):
         if self.RQ.AirportSourceNameCode:
             try:
                 if EC.visibility_of_element_located((By.ID, 'Airport source name code')):
-                    self.log('Airport source name code field is visible at ' + self.driver.current_url)
+                    # self.log('Airport source name code field is visible at ' + self.driver.current_url)
                     airport_name_code_element = self.SB.find_element(By.ID, 'Airport source name code')
                 else:
                     raise Exception('Airport source name code field is not visible')
@@ -331,7 +344,7 @@ class MontgomeryCountyAirParkTask(TaskService):
                 return self.RS
 
             try:
-                self.log('Entering Airport source name code into the field')
+                # self.log('Entering Airport source name code into the field')
                 self.driver.execute_script("arguments[0].scrollIntoView(true);", airport_name_code_element)
                 actions = ActionChains(self.driver)
                 actions.move_to_element(airport_name_code_element)
@@ -344,7 +357,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'Aircraft Type')):
-                self.log('Description/question field is visible at ' + self.driver.current_url)
+                # self.log('Description/question field is visible at ' + self.driver.current_url)
                 aircraft_type_element = self.SB.find_element(By.ID, 'Aircraft Type')
             else:
                 raise Exception('Aircraft type field is not visible')
@@ -354,7 +367,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering aircraft type into the field')
+            # self.log('Entering aircraft type into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", aircraft_type_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(aircraft_type_element)
@@ -367,7 +380,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'Description Question')):
-                self.log('Description/question field is visible at ' + self.driver.current_url)
+                # self.log('Description/question field is visible at ' + self.driver.current_url)
                 description_question_element = self.SB.find_element(By.ID, 'Description Question')
             else:
                 raise Exception('Description/question field is not visible')
@@ -377,12 +390,12 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering description/question into the field')
+            # self.log('Entering description/question into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", description_question_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(description_question_element)
             actions.click()
-            self.human_like_typing(description_question_element, self.RQ.DescriptionOrQuestion)
+            self.human_like_typing(description_question_element, self.RQ.DescriptionOrQuestion + ' (' + self.RQ.SessionUID + ')')
         except BaseException as ex:
             self.log('Failed to enter description/question into field: ' + str(ex))
             self.RS.Body = self.driver.page_source
@@ -390,7 +403,7 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         try:
             if EC.visibility_of_element_located((By.ID, 'Response requested')):
-                self.log('Response request field is visible at ' + self.driver.current_url)
+                # self.log('Response request field is visible at ' + self.driver.current_url)
                 response_request_element = self.SB.find_element(By.ID, 'Response requested')
             else:
                 raise Exception('Response request field is not visible')
@@ -400,7 +413,7 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            self.log('Entering response request into the field')
+            # self.log('Entering response request into the field')
             self.driver.execute_script("arguments[0].scrollIntoView(true);", response_request_element)
             actions = ActionChains(self.driver)
             actions.move_to_element(response_request_element)
