@@ -3,14 +3,13 @@ from typing import Optional
 
 from redis import Redis
 from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from selenium_worker.Requests.MontgomeryCountyAirParkTaskRQ import MontgomeryCountyAirParkTaskRQ
 from selenium_worker.Responses.MontgomeryCountyAirParkTaskRS import MontgomeryCountyAirParkTaskRS
-from selenium_worker.Services.TaskService import POINTER_MOVE_DELAY, TaskService
+from selenium_worker.Services.TaskService import TaskService
 from selenium_worker.constants import STAGE_OBTAINED_PAGE
 from selenium_worker.exceptions import RetryException
 from selenium_worker.utils import get_date
@@ -134,294 +133,32 @@ class MontgomeryCountyAirParkTask(TaskService):
             return self.RS
 
         try:
-            if EC.visibility_of_element_located((By.ID, 'First Name')):
-                # self.log('First name field is visible at ' + self.driver.current_url)
-                first_name_element = self.SB.find_element(By.ID, 'First Name')
-            else:
-                raise Exception('First name field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find first name field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
+            # Fill all the basic form fields
+            self.fill_form_field(By.ID, 'First Name', 'first name', self.RQ.FirstName)
+            self.fill_form_field(By.ID, 'Last Name', 'last name', self.RQ.LastName)
+            self.fill_form_field(By.ID, 'email', 'e-mail address', self.RQ.EmailAddress)
+            self.fill_form_field(By.ID, 'Phone Number', 'phone number', self.RQ.PhoneNumber)
+            self.fill_form_field(By.ID, 'Street Address Cross Streets', 'street address', self.RQ.StreetAddress)
+            self.fill_form_field(By.ID, 'City', 'city address', self.RQ.CityAddress)
+            self.fill_form_field(By.ID, 'State', 'state address', self.RQ.StateAddress)
+            self.fill_form_field(By.ID, 'ZIP', 'ZIP address', self.RQ.ZIPAddress)
 
-        try:
-            # self.log('Entering first name into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", first_name_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(first_name_element)
-            actions.click()
-            self.human_like_typing(first_name_element, self.RQ.FirstName)
-        except BaseException as ex:
-            self.log('Failed to enter first name into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'Last Name')):
-                # self.log('Last name field is visible at ' + self.driver.current_url)
-                last_name_element = self.SB.find_element(By.ID, 'Last Name')
-            else:
-                raise Exception('Last name field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find last name field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering last name into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", last_name_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(last_name_element)
-            actions.click()
-            self.human_like_typing(last_name_element, self.RQ.LastName)
-        except BaseException as ex:
-            self.log('Failed to enter last name into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'email')):
-                # self.log('E-mail address field is visible at ' + self.driver.current_url)
-                email_address_element = self.SB.find_element(By.ID, 'email')
-            else:
-                raise Exception('E-mail address field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find e-mail address field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering e-mail address into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", email_address_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(email_address_element)
-            actions.click()
-            self.human_like_typing(email_address_element, self.RQ.EmailAddress)
-        except BaseException as ex:
-            self.log('Failed to enter e-mail address into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'Phone Number')):
-                # self.log('Phone number field is visible at ' + self.driver.current_url)
-                phone_number_element = self.SB.find_element(By.ID, 'Phone Number')
-            else:
-                raise Exception('Phone number field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find phone number field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering phone number into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", phone_number_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(phone_number_element)
-            actions.click()
-            self.human_like_typing(phone_number_element, self.RQ.PhoneNumber)
-        except BaseException as ex:
-            self.log('Failed to enter phone number into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'Street Address Cross Streets')):
-                # self.log('Street address field is visible at ' + self.driver.current_url)
-                street_address_element = self.SB.find_element(By.ID, 'Street Address Cross Streets')
-            else:
-                raise Exception('Street address field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find street address field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering street address into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", street_address_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(street_address_element)
-            actions.click()
-            self.human_like_typing(street_address_element, self.RQ.StreetAddress)
-        except BaseException as ex:
-            self.log('Failed to enter street address into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'City')):
-                # self.log('City address field is visible at ' + self.driver.current_url)
-                city_address_element = self.SB.find_element(By.ID, 'City')
-            else:
-                raise Exception('City address field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find city address field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering city address into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", city_address_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(city_address_element)
-            actions.click()
-            self.human_like_typing(city_address_element, self.RQ.CityAddress)
-        except BaseException as ex:
-            self.log('Failed to enter city address into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'State')):
-                # self.log('State address field is visible at ' + self.driver.current_url)
-                state_address_element = self.SB.find_element(By.ID, 'State')
-            else:
-                raise Exception('State address field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find state address field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering state address into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", state_address_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(state_address_element)
-            actions.click()
-            self.human_like_typing(state_address_element, self.RQ.StateAddress)
-        except BaseException as ex:
-            self.log('Failed to enter state address into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'ZIP')):
-                # self.log('ZIP address field is visible at ' + self.driver.current_url)
-                zip_address_element = self.SB.find_element(By.ID, 'ZIP')
-            else:
-                raise Exception('ZIP address field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find ZIP address field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering ZIP address into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", zip_address_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(zip_address_element)
-            actions.click()
-            self.human_like_typing(zip_address_element, self.RQ.ZIPAddress)
-        except BaseException as ex:
-            self.log('Failed to enter ZIP address into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
+            # Fill date/time fields using JavaScript with computed properties
             script = ("(function(){"
-                      f"document.getElementsByName('form[Approximate Start Date Time]')[0].value = '{start_date.strftime('%d-%m-%Y') + ' ' + self.RQ.StartTime}';"
-                      f"document.getElementsByName('hidden[3_Approximate Start Date Time]')[0].value = '{start_date.strftime('%m/%d/%Y') + ' ' + self.RQ.StartTime}';"
-                      f"document.getElementsByName('form[Approximate End Date Time]')[0].value = '{end_date.strftime('%d-%m-%Y') + ' ' + self.RQ.EndTime}';"
-                      f"document.getElementsByName('hidden[3_Approximate End Date Time]')[0].value = '{end_date.strftime('%m/%d/%Y') + ' ' + self.RQ.EndTime}';"
+                      f"document.getElementsByName('form[Approximate Start Date Time]')[0].value = '{self.RQ.startDateTime}';"
+                      f"document.getElementsByName('hidden[3_Approximate Start Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
+                      f"document.getElementsByName('form[Approximate End Date Time]')[0].value = '{self.RQ.startDateTime}';"
+                      f"document.getElementsByName('hidden[3_Approximate End Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
                       "})()")
-
             self.driver.execute_script(script)
+            
+            # Fill the remaining fields
+            self.fill_form_field(By.ID, 'Airport source name code', 'airport source name code', self.RQ.AirportSourceNameCode)
+            self.fill_form_field(By.ID, 'Aircraft Type', 'aircraft type', self.RQ.AircraftType)
+            self.fill_form_field(By.ID, 'Description Question', 'description/question', self.RQ.DescriptionOrQuestion + ' (' + self.RQ.SessionUID + ')')
+            self.fill_form_field(By.ID, 'Response requested', 'response request', self.RQ.ResponseRequested)
+
         except BaseException as ex:
-            self.log('Failed to find start date & time field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        if self.RQ.AirportSourceNameCode:
-            try:
-                if EC.visibility_of_element_located((By.ID, 'Airport source name code')):
-                    # self.log('Airport source name code field is visible at ' + self.driver.current_url)
-                    airport_name_code_element = self.SB.find_element(By.ID, 'Airport source name code')
-                else:
-                    raise Exception('Airport source name code field is not visible')
-            except BaseException as ex:
-                self.log('Failed to find airport source name code field and/or scroll it into view: ' + str(ex))
-                self.RS.Body = self.driver.page_source
-                return self.RS
-
-            try:
-                # self.log('Entering Airport source name code into the field')
-                self.driver.execute_script("arguments[0].scrollIntoView(true);", airport_name_code_element)
-                actions = ActionChains(self.driver)
-                actions.move_to_element(airport_name_code_element)
-                actions.click()
-                self.human_like_typing(airport_name_code_element, self.RQ.AirportSourceNameCode)
-            except BaseException as ex:
-                self.log('Failed to enter airport source name code into field: ' + str(ex))
-                self.RS.Body = self.driver.page_source
-                return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'Aircraft Type')):
-                # self.log('Description/question field is visible at ' + self.driver.current_url)
-                aircraft_type_element = self.SB.find_element(By.ID, 'Aircraft Type')
-            else:
-                raise Exception('Aircraft type field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find aircraft type field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering aircraft type into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", aircraft_type_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(aircraft_type_element)
-            actions.click()
-            self.human_like_typing(aircraft_type_element, self.RQ.AircraftType)
-        except BaseException as ex:
-            self.log('Failed to enter aircraft type into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'Description Question')):
-                # self.log('Description/question field is visible at ' + self.driver.current_url)
-                description_question_element = self.SB.find_element(By.ID, 'Description Question')
-            else:
-                raise Exception('Description/question field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find description/question field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering description/question into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", description_question_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(description_question_element)
-            actions.click()
-            self.human_like_typing(description_question_element, self.RQ.DescriptionOrQuestion + ' (' + self.RQ.SessionUID + ')')
-        except BaseException as ex:
-            self.log('Failed to enter description/question into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            if EC.visibility_of_element_located((By.ID, 'Response requested')):
-                # self.log('Response request field is visible at ' + self.driver.current_url)
-                response_request_element = self.SB.find_element(By.ID, 'Response requested')
-            else:
-                raise Exception('Response request field is not visible')
-        except BaseException as ex:
-            self.log('Failed to find response request field and/or scroll it into view: ' + str(ex))
-            self.RS.Body = self.driver.page_source
-            return self.RS
-
-        try:
-            # self.log('Entering response request into the field')
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", response_request_element)
-            actions = ActionChains(self.driver)
-            actions.move_to_element(response_request_element)
-            actions.click()
-            self.human_like_typing(response_request_element, self.RQ.ResponseRequested)
-        except BaseException as ex:
-            self.log('Failed to enter response request into field: ' + str(ex))
-            self.RS.Body = self.driver.page_source
             return self.RS
 
         for retries in range(3):

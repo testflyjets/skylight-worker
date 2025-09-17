@@ -21,13 +21,11 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-
 def get_config():
     return {'general': GeneralSettings.to_string(), 'api': APISettings.to_string(), 'redis': RedisSettings.to_string(),
             'proxy': ProxySettings.to_string(), 'cache': CacheSettings.to_string(),
             'nopecha': NopeCHASettings.to_string(), 'browser': BrowserSettings.to_string(),
             }
-
 
 class BaseConfig:
     def __init__(self):
@@ -156,7 +154,7 @@ class ProxySettings(BaseConfig):
         'PROXIED_IP_SERVICE_URL') else os.getenv('PROXIED_IP_SERVICE_URL')
     UNPROXIED_IP_SERVICE_URL = APISettings.url(False) + '/my_ip' if not os.getenv(
         'UNPROXIED_IP_SERVICE_URL') else os.getenv('UNPROXIED_IP_SERVICE_URL')
-    MIN_RECAPTCHA_SCORE: Optional[int] = -1 if not os.getenv('MIN_RECAPTCHA_SCORE') else os.getenv('MIN_RECAPTCHA_SCORE')
+    MIN_RECAPTCHA_SCORE: int = int(os.getenv('MIN_RECAPTCHA_SCORE', '-1'))
 
     @staticmethod
     def to_string():

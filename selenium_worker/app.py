@@ -89,10 +89,8 @@ def init(**args):
         response_encoder = response_encoder_type()
 
         minimum_recaptcha_score = cfg.ProxySettings.MIN_RECAPTCHA_SCORE
-        if minimum_recaptcha_score == -1 and cfg.GeneralSettings.worker_type() in worker_type_minimum_recaptcha_scores.keys():
+        if cfg.GeneralSettings.worker_type() in worker_type_minimum_recaptcha_scores.keys():
             minimum_recaptcha_score = worker_type_minimum_recaptcha_scores[cfg.GeneralSettings.worker_type()]
-        else:
-            minimum_recaptcha_score = 0
 
         task_service.init_browser(cfg.GeneralSettings.browser_driver_type(), task_type)
         task_service.driver.set_page_load_timeout(20.0)

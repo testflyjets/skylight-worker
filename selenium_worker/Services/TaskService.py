@@ -11,6 +11,7 @@ from zipfile import is_zipfile
 import undetected_chromedriver as uc
 from redis import Redis
 from selenium.webdriver import ChromeOptions, FirefoxOptions
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from seleniumbase import SB
@@ -24,10 +25,13 @@ from selenium_worker.Responses.WorkTaskRS import WorkTaskRS
 from selenium_worker.enums import BrowserDriverType
 from selenium_worker.utils import get_actual_ip_address, get_proxied_ip_address
 
-# Human-like typing delay constants
+# Human-like typing delay constants (seconds)
 TYPING_DELAY_FROM = 0.05
 TYPING_DELAY_TO = 0.20
-POINTER_MOVE_DELAY = 150  #  milliseconds (default is 250ms)
+
+# Proxy change wait time constants (seconds)
+PROXY_CHANGE_WAIT_LOWER_BOUND = 0.25
+PROXY_CHANGE_WAIT_UPPER_BOUND = 1.25
 
 minimum_recaptcha_scores = {
     MontgomeryCountyAirParkTaskRQ: 3
@@ -298,16 +302,20 @@ class TaskService:
 
         return self.RS
 
-    def change_proxy_repeat(self, print_ip_addresses: bool = True, max_attempts: int = 10,
-                            recaptcha_score_threshold: int = 7, proxy_variation: Optional[str] = None):
+    def change_proxy_repeat(self, 
+            print_ip_addresses: bool = True, 
+            max_attempts: int = 10,
+            recaptcha_score_threshold: int = 7, 
+            proxy_variation: Optional[str] = None):
         print('Attempting to find a proxy with reCAPTCHA score >= {}'.format(recaptcha_score_threshold))
+        
         for attempt in range(max_attempts):
             try:
                 self.change_proxy(print_ip_addresses, proxy_variation, recaptcha_score_threshold)
                 if recaptcha_score_threshold == 0:
                     return ''
 
-                time.sleep(random.uniform(0.25, 1.25))
+                time.sleep(random.uniform(PROXY_CHANGE_WAIT_LOWER_BOUND, PROXY_CHANGE_WAIT_UPPER_BOUND))
                 recaptcha_score = check_recaptcha_score(self.driver)
                 if recaptcha_score >= recaptcha_score_threshold:
                     self.log('Recaptcha proxy score obtained: {} above or equal to {} '.format(str(recaptcha_score),
@@ -322,8 +330,11 @@ class TaskService:
 
         return 'Failed to find a suitable proxy for worker with UID of'.format(cfg.GeneralSettings.WORKER_UID)
 
-    def change_proxy(self, print_ip_addresses: bool = True, proxy_variation: Optional[str] = None,
-                     min_score: int = 0, max_score: int = 10) -> Optional[str]:
+    def change_proxy(self, 
+            print_ip_addresses: bool = True, 
+            proxy_variation: Optional[str] = None,
+            min_score: int = 3, 
+            max_score: int = 10) -> Optional[str]:
         changed = ''
         if proxy_variation is None or proxy_variation == '':
             proxy_variation = cfg.ProxySettings.PROXY_VARIATION
@@ -386,12 +397,83 @@ class TaskService:
         self.RS.Logs.append(log_message)
         self.RS.Error = log_message
 
-    def human_like_typing(self, 
-            element: WebElement, 
-            text: str, 
-            delay_from: float = TYPING_DELAY_FROM, 
+    def human_like_typing(self,
+            element: WebElement,
+            text: str,
+            delay_from: float = TYPING_DELAY_FROM,
             delay_to: float = TYPING_DELAY_TO):
         for char in text:
             time.sleep(random.uniform(delay_from, delay_to))
             element.send_keys(char)
+
+    def find_and_verify_element(self, locator_type, locator_value: str, field_name: str) -> WebElement:
+        """
+        Verify an element is visible and find it.
+
+        Args:
+            locator_type: The type of locator (e.g., By.ID, By.CLASS_NAME)
+            locator_value: The value of the locator
+            field_name: Human-readable name for the field (used in error messages)
+
+        Returns:
+            WebElement: The found element
+
+        Raises:
+            Exception: If element is not visible or cannot be found
+        """
+        try:
+            if EC.visibility_of_element_located((locator_type, locator_value)):
+                element = self.SB.find_element(locator_type, locator_value)
+                return element
+            else:
+                raise Exception(f'{field_name} field is not visible')
+        except BaseException as ex:
+            self.log(f'Failed to find {field_name} field and/or scroll it into view: ' + str(ex))
+            self.RS.Body = self.driver.page_source
+            raise ex
+
+    def scroll_and_interact_with_element(self, element: WebElement, field_name: str):
+        """
+        Scroll element into view, move to it, and click it.
+
+        Args:
+            element: The WebElement to interact with
+            field_name: Human-readable name for the field (used in error messages)
+
+        Raises:
+            Exception: If interaction fails
+        """
+        try:
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            actions = ActionChains(self.driver)
+            actions.move_to_element(element)
+            actions.click()
+            actions.perform()
+        except BaseException as ex:
+            self.log(f'Failed to scroll and interact with {field_name} field: ' + str(ex))
+            self.RS.Body = self.driver.page_source
+            raise ex
+
+    def fill_form_field(self, locator_type, locator_value: str, field_name: str, text_value: str):
+        """
+        Complete form field interaction: find, verify, scroll, click, and type.
+
+        Args:
+            locator_type: The type of locator (e.g., By.ID, By.CLASS_NAME)
+            locator_value: The value of the locator
+            field_name: Human-readable name for the field (used in error messages)
+            text_value: The text to type into the field
+
+        Raises:
+            Exception: If any step of the interaction fails
+        """
+        try:
+            element = self.find_and_verify_element(locator_type, locator_value, field_name)
+            self.scroll_and_interact_with_element(element, field_name)
+            self.human_like_typing(element, text_value)
+
+        except BaseException as ex:
+            self.log(f'Failed to fill {field_name} field: ' + str(ex))
+            self.RS.Body = self.driver.page_source
+            raise ex
 
