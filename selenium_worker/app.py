@@ -24,7 +24,7 @@ from selenium_worker.Responses.WorkTaskRS import WorkTaskRS, WorkTaskRSEncoder
 from selenium_worker.Services.TaskService import TaskService
 from selenium_worker.exceptions import RetryException
 from selenium_worker.vars import task_type_classes, task_page_urls, task_type_names, \
-    minimum_recaptcha_scores, task_queues, task_names
+    worker_type_minimum_recaptcha_scores, task_queues, task_names
 from selenium_worker.enums import WorkerType
 from selenium_worker.utils import date_parser, date_encoder, build_pypasser_config_json, build_nopecha_config, \
     time_diff_ms
@@ -89,8 +89,8 @@ def init(**args):
         response_encoder = response_encoder_type()
 
         minimum_recaptcha_score = cfg.ProxySettings.MIN_RECAPTCHA_SCORE
-        if minimum_recaptcha_score == -1 and cfg.GeneralSettings.worker_type() in minimum_recaptcha_scores.keys():
-            minimum_recaptcha_score = minimum_recaptcha_scores[cfg.GeneralSettings.worker_type()]
+        if minimum_recaptcha_score == -1 and cfg.GeneralSettings.worker_type() in worker_type_minimum_recaptcha_scores.keys():
+            minimum_recaptcha_score = worker_type_minimum_recaptcha_scores[cfg.GeneralSettings.worker_type()]
         else:
             minimum_recaptcha_score = 0
 
@@ -167,11 +167,11 @@ def should_restart(**args):
                     # Shutdown browser so that it is re-created to continue from cached state
                     task_service.shutdown(True)
                     minimum_recaptcha_score = 1
-                    if cfg.GeneralSettings.WORKER_TYPE not in minimum_recaptcha_scores:
+                    if cfg.GeneralSettings.WORKER_TYPE not in worker_type_minimum_recaptcha_scores:
                         print(
                             f'Missing state\' minimum reCAPTCHA score for state with IIN of {cfg.GeneralSettings.WORKER_TYPE}, using default 0.1')
                     else:
-                        minimum_recaptcha_score = minimum_recaptcha_scores[cfg.GeneralSettings.worker_type()]
+                        minimum_recaptcha_score = worker_type_minimum_recaptcha_scores[cfg.GeneralSettings.worker_type()]
                     # Prepare driver and user data directory
                     task_service.init_browser(cfg.GeneralSettings.browser_driver_type(),
                                               cfg.GeneralSettings.worker_type())

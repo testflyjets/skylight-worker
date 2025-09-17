@@ -31,6 +31,6 @@ task_type_names = {
     WorkerType.Montgomery: "Montgomery County Airpark"
 }
 
-minimum_recaptcha_scores = {
+worker_type_minimum_recaptcha_scores = {
     WorkerType.Montgomery: 3
 }

@@ -25,8 +25,9 @@ from selenium_worker.enums import BrowserDriverType
 from selenium_worker.utils import get_actual_ip_address, get_proxied_ip_address
 
 # Human-like typing delay constants
-TYPING_DELAY_FROM = 0.10
-TYPING_DELAY_TO = 0.35
+TYPING_DELAY_FROM = 0.05
+TYPING_DELAY_TO = 0.20
+POINTER_MOVE_DELAY = 150  #  milliseconds (default is 250ms)
 
 minimum_recaptcha_scores = {
     MontgomeryCountyAirParkTaskRQ: 3
