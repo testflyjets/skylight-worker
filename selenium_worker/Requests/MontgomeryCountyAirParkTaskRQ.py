@@ -62,8 +62,8 @@ class MontgomeryCountyAirParkTaskRQ(WorkTaskRQ):
         event_datetime = parse_event_time(self.EventTime)
         if event_datetime is not None:
             # Format for the form fields (same format as before)
-            self.startDateTime = event_datetime.strftime('%d-%m-%Y %H:%M:%S')
-            self.hiddenStartDateTime = event_datetime.strftime('%m/%d/%Y %H:%M:%S')
+            self.startDateTime = event_datetime.strftime('%d-%m-%Y %H:%M')
+            self.hiddenStartDateTime = event_datetime.strftime('%m/%d/%Y %H:%M')
         else:
             self.startDateTime = ''
             self.hiddenStartDateTime = ''
