@@ -122,16 +122,6 @@ class MontgomeryCountyAirParkTask(TaskService):
         return self.RS
 
     def process(self, initial_url: str, downloads_path: str) -> MontgomeryCountyAirParkTaskRS:
-        start_date = get_date(self.RQ.StartDate)
-        if start_date is None:
-            self.error(f'Failed to interpret start date {self.RQ.StartDate}')
-            return self.RS
-
-        end_date = get_date(self.RQ.EndDate)
-        if end_date is None:
-            self.error(f'Failed to interpret end date {self.RQ.EndDate}')
-            return self.RS
-
         try:
             # Fill all the basic form fields
             self.fill_form_field(By.ID, 'First Name', 'first name', self.RQ.FirstName)

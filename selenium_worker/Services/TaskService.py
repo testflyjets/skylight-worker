@@ -349,9 +349,13 @@ class TaskService:
                     "proxy_variation": proxy_variation, "api_url": cfg.APISettings.url(True), "min_score": min_score,
                     "max_score": max_score
                 }
+                # Create a copy of query_args with sensitive data redacted for logging
+                redacted_query_args = query_args.copy()
+                redacted_query_args["proxy_username"] = "REDACTED"
+                redacted_query_args["proxy_password"] = "REDACTED"
                 print(
                     'Making request to ' + f'{cfg.APISettings.url()}/get_proxy_details_fake?' + urllib.parse.urlencode(
-                        query_args))
+                        redacted_query_args))
                 self.driver.get(
                     f'{cfg.APISettings.url()}/get_proxy_details_fake?' + urllib.parse.urlencode(query_args))
                 self.log(f'Proxy change request is completed')

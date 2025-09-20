@@ -278,6 +278,8 @@ def work(self, request, job_uid: str):
             print(f' process Total processing execution time for job {job_uid} is ' + str(
                 time_diff_ms(datetime.now(), time_started)) + ' ms.')
             meta['processing_total'] = time_diff_ms(datetime.now(), time_started)
+        
+        # Job complete, encode the result
         if meta is not None:
             rds.set('job.{}'.format(job_uid), json.dumps(meta, default=date_encoder))
         return response_encoder.encode(response)
@@ -316,7 +318,7 @@ def work(self, request, job_uid: str):
         os.kill(os.getpid(), signal.SIGKILL)
         return None
     finally:
-       print('Unhandled branch')
+       print('Unhandled branch in task_worker.work')
 
 
 if __name__ == '__main__' or __name__ == 'main':
