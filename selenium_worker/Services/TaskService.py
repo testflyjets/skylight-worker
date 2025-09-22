@@ -89,7 +89,7 @@ class TaskService:
 
                 driver_options.add_argument('--disable-blink-features=AutomationControlled')
                 driver_options.add_argument('--disable-dev-shm-usage')
-                driver_options.add_argument('--no-sandbox')
+                # driver_options.add_argument('--no-sandbox') # appears to be unsupported now
                 driver_options.add_argument('--force-fieldtrials=AutomaticTabDiscarding/Disabled')
                 driver_options.add_argument('--disable-browser-side-navigation')
                 driver_options.accept_insecure_certs = True

@@ -50,7 +50,11 @@ class MontgomeryCountyAirParkTask(TaskService):
             if len(blocked_urls) > 0:
                 self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": blocked_urls})
                 self.driver.execute_cdp_cmd('Network.enable', {})
+                
+            # Prepare the page for submission
             self.RS = self.prepare(initial_url, downloads_path)
+            
+            # Re-enable loading of blocked URLS like recaptcha or google tag
             if len(blocked_urls) > 0:
                 self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": []})
                 self.driver.execute_cdp_cmd('Network.enable', {})
@@ -85,7 +89,11 @@ class MontgomeryCountyAirParkTask(TaskService):
             if len(blocked_urls) > 0:
                 self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": blocked_urls})
                 self.driver.execute_cdp_cmd('Network.enable', {})
+                
+            # Prepare the page for submission
             self.RS = self.prepare(initial_url, downloads_path)
+            
+            # Re-enable loading of blocked URLS like recaptcha or google tag
             if len(blocked_urls) > 0:
                 self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": []})
                 self.driver.execute_cdp_cmd('Network.enable', {})
@@ -124,52 +132,54 @@ class MontgomeryCountyAirParkTask(TaskService):
         return self.RS
 
     def process(self, initial_url: str, downloads_path: str) -> MontgomeryCountyAirParkTaskRS:
-        try:
-            # Fill all the basic form fields
-            self.fill_form_field(By.ID, 'First Name', 'first name', self.RQ.FirstName)
-            self.fill_form_field(By.ID, 'Last Name', 'last name', self.RQ.LastName)
-            self.fill_form_field(By.ID, 'email', 'e-mail address', self.RQ.EmailAddress)
-            self.fill_form_field(By.ID, 'Phone Number', 'phone number', self.RQ.PhoneNumber)
-            self.fill_form_field(By.ID, 'Street Address Cross Streets', 'street address', self.RQ.StreetAddress)
-            self.fill_form_field(By.ID, 'City', 'city address', self.RQ.CityAddress)
-            self.fill_form_field(By.ID, 'State', 'state address', self.RQ.StateAddress)
-            self.fill_form_field(By.ID, 'ZIP', 'ZIP address', self.RQ.ZIPAddress)
+        # Comment out for testing
+        
+        # try:
+        #     # Fill all the basic form fields
+        #     self.fill_form_field(By.ID, 'First Name', 'first name', self.RQ.FirstName)
+        #     self.fill_form_field(By.ID, 'Last Name', 'last name', self.RQ.LastName)
+        #     self.fill_form_field(By.ID, 'email', 'e-mail address', self.RQ.EmailAddress)
+        #     self.fill_form_field(By.ID, 'Phone Number', 'phone number', self.RQ.PhoneNumber)
+        #     self.fill_form_field(By.ID, 'Street Address Cross Streets', 'street address', self.RQ.StreetAddress)
+        #     self.fill_form_field(By.ID, 'City', 'city address', self.RQ.CityAddress)
+        #     self.fill_form_field(By.ID, 'State', 'state address', self.RQ.StateAddress)
+        #     self.fill_form_field(By.ID, 'ZIP', 'ZIP address', self.RQ.ZIPAddress)
 
-            # Fill date/time fields using JavaScript with computed properties
-            script = ("(function(){"
-                      f"document.getElementsByName('form[Approximate Start Date Time]')[0].value = '{self.RQ.startDateTime}';"
-                      f"document.getElementsByName('hidden[3_Approximate Start Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
-                      f"document.getElementsByName('form[Approximate End Date Time]')[0].value = '{self.RQ.startDateTime}';"
-                      f"document.getElementsByName('hidden[3_Approximate End Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
-                      "})()")
-            self.driver.execute_script(script)
+        #     # Fill date/time fields using JavaScript with computed properties
+        #     script = ("(function(){"
+        #               f"document.getElementsByName('form[Approximate Start Date Time]')[0].value = '{self.RQ.startDateTime}';"
+        #               f"document.getElementsByName('hidden[3_Approximate Start Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
+        #               f"document.getElementsByName('form[Approximate End Date Time]')[0].value = '{self.RQ.startDateTime}';"
+        #               f"document.getElementsByName('hidden[3_Approximate End Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
+        #               "})()")
+        #     self.driver.execute_script(script)
             
-            # Fill the remaining fields
-            self.fill_form_field(By.ID, 'Airport source name code', 'airport source name code', self.RQ.AirportSourceNameCode)
-            self.fill_form_field(By.ID, 'Aircraft Type', 'aircraft type', self.RQ.AircraftType)
-            self.fill_form_field(By.ID, 'Description Question', 'description/question', self.RQ.DescriptionOrQuestion + ' (' + self.RQ.SessionUID + ')')
-            self.fill_form_field(By.ID, 'Response requested', 'response request', self.RQ.ResponseRequested)
+        #     # Fill the remaining fields
+        #     self.fill_form_field(By.ID, 'Airport source name code', 'airport source name code', self.RQ.AirportSourceNameCode)
+        #     self.fill_form_field(By.ID, 'Aircraft Type', 'aircraft type', self.RQ.AircraftType)
+        #     self.fill_form_field(By.ID, 'Description Question', 'description/question', self.RQ.DescriptionOrQuestion + ' (' + self.RQ.SessionUID + ')')
+        #     self.fill_form_field(By.ID, 'Response requested', 'response request', self.RQ.ResponseRequested)
 
-        except BaseException as ex:
-            return self.RS
+        # except BaseException as ex:
+        #     return self.RS
 
-        for retries in range(3):
-            if initial_url == self.driver.current_url:
-                try:
-                    self.log('Clicking on the `Send` button')
-                    element = self.SB.find_element(By.ID, 'Send')
-                    self.driver.execute_script("arguments[0].click();", element)
-                    time.sleep(5)
-                    self.wait_for_page_to_load(10000)
-                except BaseException as ex:
-                    self.log('Failed to click on the `Send` button on the page: ' + str(ex))
-                    self.RS.Body = self.driver.page_source
-                    return self.RS
-            else:
-                break
+        # for retries in range(3):
+        #     if initial_url == self.driver.current_url:
+        #         try:
+        #             self.log('Clicking on the `Send` button')
+        #             element = self.SB.find_element(By.ID, 'Send')
+        #             self.driver.execute_script("arguments[0].click();", element)
+        #             time.sleep(5)
+        #             self.wait_for_page_to_load(10000)
+        #         except BaseException as ex:
+        #             self.log('Failed to click on the `Send` button on the page: ' + str(ex))
+        #             self.RS.Body = self.driver.page_source
+        #             return self.RS
+        #     else:
+        #         break
 
-        if 'Please complete all required fields!' in self.driver.page_source:
-            raise RetryException('Failed to submit the form with provided data')
+        # if 'Please complete all required fields!' in self.driver.page_source:
+        #     raise RetryException('Failed to submit the form with provided data')
 
         # Callback here
         self.RS.Body = "All done successfully"

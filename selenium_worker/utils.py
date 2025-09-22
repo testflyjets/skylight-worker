@@ -174,7 +174,7 @@ def check_recaptcha_score(driver: Driver) -> int:
     else:
         score = int(float(results[0]) * 10)
 
-    print('Your score is: {}'.format(score))
+    print('Your recaptcha score is: {}'.format(score))
 
     try:
         cookies = driver.execute_cdp_cmd("Network.getAllCookies",

@@ -49,7 +49,7 @@ class GeneralSettings(BaseConfig):
         return BrowserDriverType.Unknown
 
     @staticmethod
-    def worker_type() -> WORKER_TYPE:
+    def worker_type() -> WorkerType:
         worker_value = GeneralSettings.WORKER_TYPE
         if worker_value == 1:
             return WorkerType.Montgomery

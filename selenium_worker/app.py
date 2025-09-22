@@ -171,12 +171,14 @@ def should_restart(**args):
                     logger.info(f'Performing tear-down - {retry + 1} out of 3...')
                     # Shutdown browser so that it is re-created to continue from cached state
                     task_service.shutdown(True)
-                    minimum_recaptcha_score = 1
-                    if cfg.GeneralSettings.WORKER_TYPE not in worker_type_minimum_recaptcha_scores:
+                    
+                    minimum_recaptcha_score = 3
+                    if cfg.GeneralSettings.worker_type() not in worker_type_minimum_recaptcha_scores:
                         logger.warning(
-                            f'Missing state\' minimum reCAPTCHA score for state with IIN of {cfg.GeneralSettings.WORKER_TYPE}, using default 0.1')
+                            f'Missing minimum reCAPTCHA score for state with WorkerType of {cfg.GeneralSettings.WORKER_TYPE}, using default of 1')
                     else:
                         minimum_recaptcha_score = worker_type_minimum_recaptcha_scores[cfg.GeneralSettings.worker_type()]
+                    
                     # Prepare driver and user data directory
                     task_service.init_browser(cfg.GeneralSettings.browser_driver_type(),
                                               cfg.GeneralSettings.worker_type())
