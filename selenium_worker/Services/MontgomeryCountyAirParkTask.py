@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import Optional
 
@@ -12,6 +13,8 @@ from selenium_worker.Responses.MontgomeryCountyAirParkTaskRS import MontgomeryCo
 from selenium_worker.Services.TaskService import TaskService
 from selenium_worker.constants import STAGE_OBTAINED_PAGE
 from selenium_worker.exceptions import RetryException
+
+logger = logging.getLogger(__name__)
 
 class MontgomeryCountyAirParkTask(TaskService):
     RQ: MontgomeryCountyAirParkTaskRQ

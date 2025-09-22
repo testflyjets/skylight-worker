@@ -1,3 +1,4 @@
+import logging
 import os
 import random
 import shutil
@@ -24,6 +25,8 @@ from selenium_worker.Requests.WorkTaskRQ import WorkTaskRQ
 from selenium_worker.Responses.WorkTaskRS import WorkTaskRS
 from selenium_worker.enums import BrowserDriverType
 from selenium_worker.utils import get_actual_ip_address, get_proxied_ip_address
+
+logger = logging.getLogger(__name__)
 
 # Human-like typing delay constants (seconds)
 TYPING_DELAY_FROM = 0.05
@@ -122,7 +125,7 @@ class TaskService:
         # after shutdown() the user_data_dir became empty
         self.user_data_dir = user_data_dir
 
-        print(f'Creating a browser with {browser_driver_type}')
+        logger.info(f'Creating a browser with {browser_driver_type}')
         extensions = self.get_extensions(browser_driver_type)
         driver_options = self.get_driver_options(browser_driver_type, extensions)
 
@@ -153,26 +156,26 @@ class TaskService:
 
         if self.driver is None:
             raise RuntimeError('Cannot find any browser driver')
-        print(f'Browser {browser_driver_type} was created successfully')
+        logger.info(f'Browser {browser_driver_type} was created successfully')
 
     def init_browser(self, browser_driver_type: BrowserDriverType, task_type: str):
-        print('Initializing browser ...')
+        logger.info('Initializing browser ...')
         self.user_data_dir = os.path.join(cfg.CacheSettings.DATA_PATH, uuid4().__str__())
-        print(f'User data directory is {self.user_data_dir}')
+        logger.info(f'User data directory is {self.user_data_dir}')
         if browser_driver_type == BrowserDriverType.Chrome and os.path.exists(
                 os.path.join(cfg.CacheSettings.GLOBALCACHE_PATH,
                              f'{task_type}.zip')) and cfg.CacheSettings.CACHE_USE is True:  # Check before copying
             # Copy from global cache into user data
             if is_zipfile(os.path.join(cfg.CacheSettings.GLOBALCACHE_PATH, f'{task_type}.zip')):
                 try:
-                    print('Unpacking archive ' + os.path.join(cfg.CacheSettings.GLOBALCACHE_PATH,
+                    logger.info('Unpacking archive ' + os.path.join(cfg.CacheSettings.GLOBALCACHE_PATH,
                                                               f'{task_type}.zip') + f' into {self.user_data_dir}')
                     shutil.unpack_archive(os.path.join(cfg.CacheSettings.GLOBALCACHE_PATH, f'{task_type}.zip'),
                                           self.user_data_dir)
                 except Exception as e:
-                    print(f"{e}")
+                    logger.error(f"{e}")
             else:
-                print(f"Skipping using cache from ZIP file {task_type}.zip")
+                logger.info(f"Skipping using cache from ZIP file {task_type}.zip")
 
         self.create_driver(browser_driver_type,
                            browser_binary_path=cfg.BrowserSettings.BROWSER_BINARY_PATH,
@@ -200,9 +203,9 @@ class TaskService:
         while True:
             try:
                 ready_state = self.driver.execute_script('return document.readyState')
-                print(f'document.readyState: {ready_state}')
+                logger.debug(f'document.readyState: {ready_state}')
                 if ready_state in ['loading', 'interactive', 'complete']:
-                    print('Page started loading')
+                    logger.debug('Page started loading')
                     break
             except Exception:
                 pass
@@ -224,9 +227,9 @@ class TaskService:
         while True:
             try:
                 ready_state = self.driver.execute_script('return document.readyState')
-                print(f'document.readyState: {ready_state}')
+                logger.debug(f'document.readyState: {ready_state}')
                 if ready_state in ['loading', 'interactive', 'complete']:
-                    print('Page started loading')
+                    logger.debug('Page started loading')
                     break
             except Exception:
                 pass
@@ -307,7 +310,7 @@ class TaskService:
             max_attempts: int = 10,
             recaptcha_score_threshold: int = 7, 
             proxy_variation: Optional[str] = None):
-        print('Attempting to find a proxy with reCAPTCHA score >= {}'.format(recaptcha_score_threshold))
+        logger.info('Attempting to find a proxy with reCAPTCHA score >= {}'.format(recaptcha_score_threshold))
         
         for attempt in range(max_attempts):
             try:
@@ -322,10 +325,10 @@ class TaskService:
                                                                                                str(recaptcha_score_threshold)))
                     return ''
             except MaxRetryError as mre:
-                self.log('Failed to change proxy due to error: ' + str(mre))
+                self.error('Failed to change proxy due to error: ' + str(mre))
                 continue
             except BaseException as e:
-                self.log('Failed to change proxy due to exception: ' + str(e))
+                self.error('Failed to change proxy due to exception: ' + str(e))
                 continue
 
         return 'Failed to find a suitable proxy for worker with UID of'.format(cfg.GeneralSettings.WORKER_UID)
@@ -353,7 +356,7 @@ class TaskService:
                 redacted_query_args = query_args.copy()
                 redacted_query_args["proxy_username"] = "REDACTED"
                 redacted_query_args["proxy_password"] = "REDACTED"
-                print(
+                logger.info(
                     'Making request to ' + f'{cfg.APISettings.url()}/get_proxy_details_fake?' + urllib.parse.urlencode(
                         redacted_query_args))
                 self.driver.get(
@@ -361,7 +364,7 @@ class TaskService:
                 self.log(f'Proxy change request is completed')
             except BaseException as e:
                 changed = 'Failed to change proxy: ' + str(e)
-                self.log(f'Error during proxy change for worker UID of {cfg.GeneralSettings.WORKER_UID}: ' + str(e))
+                self.error(f'Error during proxy change for worker UID of {cfg.GeneralSettings.WORKER_UID}: ' + str(e))
             finally:
                 pass
 
@@ -372,15 +375,15 @@ class TaskService:
             time.sleep(0.5)
             try:
                 actual_ip_address = get_actual_ip_address()
-                print('Actual IP address: {}'.format(actual_ip_address))
+                logger.info('Actual IP address: {}'.format(actual_ip_address))
             except Exception as e:
-                print('Failed to obtain actual IP address: {}'.format(e))
+                logger.warning('Failed to obtain actual IP address: {}'.format(e))
             try:
                 # For proxy change obtain it via Selenium because request-based will obtain it from Redis
                 proxied_ip_address = get_proxied_ip_address(self.driver)
-                print('Proxied IP address: {}'.format(proxied_ip_address))
+                logger.info('Proxied IP address: {}'.format(proxied_ip_address))
             except Exception as e:
-                print('Failed to obtain proxied IP address: {}'.format(e))
+                logger.warning('Failed to obtain proxied IP address: {}'.format(e))
 
         return changed
 
@@ -392,12 +395,12 @@ class TaskService:
 
     def log(self, logs: str):
         log_message = f'[{datetime.now(timezone.utc).strftime("%Y-%m-%d-%H:%M:%S.%f")[:-3]}] - {logs}'
-        print(log_message)
+        logger.info(log_message)
         self.RS.Logs.append(log_message)
 
     def error(self, logs: str):
         log_message = f'[{datetime.now(timezone.utc).strftime("%Y-%m-%d-%H:%M:%S.%f")[:-3]}] - {logs}'
-        print(log_message)
+        logger.error(log_message)
         self.RS.Logs.append(log_message)
         self.RS.Error = log_message
 
@@ -432,7 +435,7 @@ class TaskService:
             else:
                 raise Exception(f'{field_name} field is not visible')
         except BaseException as ex:
-            self.log(f'Failed to find {field_name} field and/or scroll it into view: ' + str(ex))
+            self.error(f'Failed to find {field_name} field and/or scroll it into view: ' + str(ex))
             self.RS.Body = self.driver.page_source
             raise ex
 
@@ -454,7 +457,7 @@ class TaskService:
             actions.click()
             actions.perform()
         except BaseException as ex:
-            self.log(f'Failed to scroll and interact with {field_name} field: ' + str(ex))
+            self.error(f'Failed to scroll and interact with {field_name} field: ' + str(ex))
             self.RS.Body = self.driver.page_source
             raise ex
 
@@ -477,7 +480,7 @@ class TaskService:
             self.human_like_typing(element, text_value)
 
         except BaseException as ex:
-            self.log(f'Failed to fill {field_name} field: ' + str(ex))
+            self.error(f'Failed to fill {field_name} field: ' + str(ex))
             self.RS.Body = self.driver.page_source
             raise ex
 

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import platform
 import signal
@@ -29,24 +30,26 @@ from selenium_worker.enums import WorkerType
 from selenium_worker.utils import date_parser, date_encoder, build_pypasser_config_json, build_nopecha_config, \
     time_diff_ms
 
+logger = logging.getLogger(__name__)
+
 task_service: Optional[TaskService] = None
 display: Optional[Display] = None
 worker_started_at: Optional[datetime] = None
 last_task_finished_at: Optional[datetime] = None
 
-print('Creating Celery application ...')
+logger.info('Creating Celery application ...')
 app = celery.Celery(
     'selenium_tasks',
     broker="redis://{}:{}".format(cfg.RedisSettings.REDIS_HOST, cfg.RedisSettings.REDIS_PORT),
     backend="redis://{}:{}".format(cfg.RedisSettings.REDIS_HOST, cfg.RedisSettings.REDIS_PORT)
 )
-print('Celery application was created successfully')
+logger.info('Celery application was created successfully')
 
 @signals.worker_process_init.connect
 def init(**args):
     global display
     global task_service
-    print('Begin worker initialization ...')
+    logger.info('Begin worker initialization ...')
 
     worker_started_at = datetime.now(timezone.utc)
     try:
@@ -57,29 +60,29 @@ def init(**args):
                 display = Display(visible=False, size=(1920, 1080))
                 display.start()
             except XStartTimeoutError as xe:
-                print(
+                logger.error(
                     'Virtual display error during worker initialization: {}: {}'.format(xe, traceback.format_exc()))
                 if task_service is not None and task_service.driver is not None:
                     task_service.shutdown()
-                print(
+                logger.error(
                     f'Terminating {cfg.GeneralSettings.WORKER_TYPE} worker process with UID of {os.getpid()} due to display error')
                 os.kill(os.getpid(), signal.SIGKILL)
                 return None
 
-        print('Starting worker initialization ...')
+        logger.info('Starting worker initialization ...')
         initial_url = task_page_urls[cfg.GeneralSettings.worker_type()]
         task_type = task_names[cfg.GeneralSettings.worker_type()]
         service_type, request_type, request_encoder_type, response_type, response_encoder_type = task_type_classes[
                                                                                  cfg.GeneralSettings.worker_type()][:]
         if request_type is None:
-            print(f'Invalid worker type: ${cfg.GeneralSettings.WORKER_TYPE}')
+            logger.error(f'Invalid worker type: ${cfg.GeneralSettings.WORKER_TYPE}')
             return None
 
         request = request_type({})
         if task_service is None:
             task_service = service_type()
         if task_service is None:
-            print(f'Cannot instantiate service class for worker type of {cfg.GeneralSettings.WORKER_TYPE}')
+            logger.error(f'Cannot instantiate service class for worker type of {cfg.GeneralSettings.WORKER_TYPE}')
             return None
 
         response = response_type()
@@ -95,26 +98,26 @@ def init(**args):
         task_service.init_browser(cfg.GeneralSettings.browser_driver_type(), task_type)
         task_service.driver.set_page_load_timeout(20.0)
         task_service.driver.switch_to.window(task_service.driver.current_window_handle)
-        
-        print(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-UP BEGIN ===')
+
+        logger.info(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-UP BEGIN ===')
         task_service.tearup(initial_url=initial_url, downloads_path=cfg.CacheSettings.DOWNLOADS_PATH,
                             rds=rds, recaptcha_score_threshold=minimum_recaptcha_score)
-        print(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-UP COMPLETE ===')
+        logger.info(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-UP COMPLETE ===')
         return None
 
     except ProxyError as pe:
-        print('Proxy exception during worker initialization: {}: {}'.format(pe, traceback.format_exc()))
+        logger.error('Proxy exception during worker initialization: {}: {}'.format(pe, traceback.format_exc()))
         if task_service is not None and task_service.driver is not None:
             task_service.shutdown()
-        print(
+        logger.error(
             f'Terminating {cfg.GeneralSettings.WORKER_TYPE} worker process with UID of {os.getpid()} due to proxy error')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
     except Exception as e:
-        print('General exception during worker initialization: {}: {}'.format(e, traceback.format_exc()))
+        logger.error('General exception during worker initialization: {}: {}'.format(e, traceback.format_exc()))
         if task_service is not None and task_service.driver is not None:
             task_service.shutdown()
-        print(f'Terminating worker process with UID of {os.getpid()} due to Exception')
+        logger.error(f'Terminating worker process with UID of {os.getpid()} due to Exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
 
@@ -125,13 +128,13 @@ def deinit(**args):
     global task_service
 
     try:
-        print('De-initializing worker process with ID {}'.format(os.getpid()))
+        logger.info('De-initializing worker process with ID {}'.format(os.getpid()))
         if not (display is None):
             display.stop()
         task_service.shutdown()
     except Exception as e:
-        print('General exception during worker de-initialization: {} - {}'.format(e, traceback.format_exc()))
-        print(f'Terminating process with ID of {os.getpid()} due to Exception in deinit')
+        logger.error('General exception during worker de-initialization: {} - {}'.format(e, traceback.format_exc()))
+        logger.error(f'Terminating process with ID of {os.getpid()} due to Exception in deinit')
         os.kill(os.getpid(), signal.SIGKILL)
 
 
@@ -161,12 +164,12 @@ def should_restart(**args):
                     if task_service is None:
                         task_service = service_type(RQ=request)
 
-                    print(f'Performing tear-down - {retry + 1} out of 3...')
+                    logger.info(f'Performing tear-down - {retry + 1} out of 3...')
                     # Shutdown browser so that it is re-created to continue from cached state
                     task_service.shutdown(True)
                     minimum_recaptcha_score = 1
                     if cfg.GeneralSettings.WORKER_TYPE not in worker_type_minimum_recaptcha_scores:
-                        print(
+                        logger.warning(
                             f'Missing state\' minimum reCAPTCHA score for state with IIN of {cfg.GeneralSettings.WORKER_TYPE}, using default 0.1')
                     else:
                         minimum_recaptcha_score = worker_type_minimum_recaptcha_scores[cfg.GeneralSettings.worker_type()]
@@ -174,7 +177,7 @@ def should_restart(**args):
                     task_service.init_browser(cfg.GeneralSettings.browser_driver_type(),
                                               cfg.GeneralSettings.worker_type())
                     task_service.driver.switch_to.window(task_service.driver.current_window_handle)
-                    print(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-DOWN BEGIN ===')
+                    logger.info(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-DOWN BEGIN ===')
 
                     task_service.teardown(initial_url=initial_url, downloads_path=cfg.CacheSettings.DOWNLOADS_PATH,
                                           rds=rds, recaptcha_score_threshold=minimum_recaptcha_score)
@@ -184,12 +187,12 @@ def should_restart(**args):
                     response.Error = ''
                     task_service.RS = response
 
-                    print(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-DOWN COMPLETE ===')
+                    logger.info(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-DOWN COMPLETE ===')
                     return None
                 return None
             except Exception as e:
                 task_service.shutdown()
-                print(f'Terminating process with ID of {os.getpid()} due to Exception in should_restart')
+                logger.error(f'Terminating process with ID of {os.getpid()} due to Exception in should_restart')
                 os.kill(os.getpid(), signal.SIGKILL)
                 return None
     except:
@@ -214,10 +217,10 @@ def work(self, request, job_uid: str):
 
     try:
         if task_service is None:
-            print(f'Service class for state with worker type of {cfg.GeneralSettings.WORKER_TYPE} is non-existant')
+            logger.error(f'Service class for state with worker type of {cfg.GeneralSettings.WORKER_TYPE} does not exist')
             return None
 
-        print('Begin processing of job with UID {}'.format(job_uid))
+        logger.info('Begin processing of job with UID {}'.format(job_uid))
         if cfg.GeneralSettings.WORKER_TYPE == -1:
             raise Exception('Missing worker type value')
 
@@ -252,13 +255,13 @@ def work(self, request, job_uid: str):
 
         validation_errors = request.validate()
         if validation_errors:
-            print('Errors in the request: {}'.format(validation_errors))
+            logger.error('Errors in the request: {}'.format(validation_errors))
             response.Errors = validation_errors
             if meta is not None:
                 rds.set('job.{}'.format(job_uid), json.dumps(meta, default=date_encoder))
             return response_encoder.encode(response)
 
-        print(f'Processing worker type task for {rq.Type} and data {request_encoder.encode(request)} ...')
+        logger.info(f'Processing worker type task for {rq.Type} and data {request_encoder.encode(request)} ...')
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # task_service.driver.execute_script("window.stop();")
@@ -275,7 +278,7 @@ def work(self, request, job_uid: str):
             if len(blocked_urls) > 0:
                 task_service.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": []})
                 task_service.driver.execute_cdp_cmd('Network.enable', {})
-            print(f' process Total processing execution time for job {job_uid} is ' + str(
+            logger.info(f' process Total processing execution time for job {job_uid} is ' + str(
                 time_diff_ms(datetime.now(), time_started)) + ' ms.')
             meta['processing_total'] = time_diff_ms(datetime.now(), time_started)
         
@@ -285,60 +288,60 @@ def work(self, request, job_uid: str):
         return response_encoder.encode(response)
 
     except TimeoutException as e:
-        print("Timeout error, please try again: {} - {}".format(e, traceback.format_exc()))
+        logger.error("Timeout error, please try again: {} - {}".format(e, traceback.format_exc()))
         task_service.shutdown()
-        print(f'Terminating process with ID of {os.getpid()} due to Timeout exception')
+        logger.error(f'Terminating process with ID of {os.getpid()} due to Timeout exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
     except NameError as e:
-        print("Name error, please try again: {} - {}".format(e, traceback.format_exc()))
+        logger.error("Name error, please try again: {} - {}".format(e, traceback.format_exc()))
         task_service.shutdown()
-        print(f'Terminating process with ID of {os.getpid()} due to NameError exception')
+        logger.error(f'Terminating process with ID of {os.getpid()} due to NameError exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
     except WebDriverException as e:
-        print("Error with webdriver, please try again: {} - {}".format(e, traceback.format_exc()))
+        logger.error("Error with webdriver, please try again: {} - {}".format(e, traceback.format_exc()))
         task_service.shutdown()
-        print(f'Terminating process with ID of {os.getpid()} due to WebDriver exception')
+        logger.error(f'Terminating process with ID of {os.getpid()} due to WebDriver exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
     except RetryException as re:
-        print('Failed to obtain results, retrying')
+        logger.warning('Failed to obtain results, retrying')
         raise self.retry(countdown=request.Countdown, max_retries=request.MaxRetries)
     except MaxRetriesExceededError as mree:
-        print("Failed to obtain results after exhausting all retries: {} - {}".format(mree, traceback.format_exc()))
+        logger.error("Failed to obtain results after exhausting all retries: {} - {}".format(mree, traceback.format_exc()))
         task_service.shutdown()
-        print(f'Terminating process with ID of {os.getpid()} due to maximum retries reached exception')
+        logger.error(f'Terminating process with ID of {os.getpid()} due to maximum retries reached exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
     except Exception as e:
-        print("General exception, please try again: {} - {}".format(e, traceback.format_exc()))
+        logger.error("General exception, please try again: {} - {}".format(e, traceback.format_exc()))
         task_service.shutdown()
-        print(f'Terminating process with ID of {os.getpid()} due to Exception')
+        logger.error(f'Terminating process with ID of {os.getpid()} due to Exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
     finally:
-       print('Unhandled branch in task_worker.work')
+       logger.warning('Unhandled branch in task_worker.work')
 
 
 if __name__ == '__main__' or __name__ == 'main':
     load_dotenv()
 
-    print('Connecting to Redis ...')
+    logger.info('Connecting to Redis ...')
     rds = cfg.RedisSettings.rds()
 
-    print('Updating PyPasser extension configuration ...')
+    logger.info('Updating PyPasser extension configuration ...')
     build_pypasser_config_json()
 
-    print('Updating nopeCHA configuration ...')
+    logger.info('Updating nopeCHA configuration ...')
     build_nopecha_config()
 
-    print('Registering tasks ...')
+    logger.info('Registering tasks ...')
     asynpool.PROC_ALIVE_TIMEOUT = 240
     app.tasks.register(work)
     app.config_from_object(cfg)
 
-    print('Checking for existence of paths ...')
+    logger.info('Checking for existence of paths ...')
     if not os.path.exists(cfg.CacheSettings.DATA_PATH):
         os.mkdir(cfg.CacheSettings.DATA_PATH)
     if not os.path.exists(cfg.CacheSettings.DISK_PATH):
@@ -350,7 +353,7 @@ if __name__ == '__main__' or __name__ == 'main':
 
     worker_queue = task_queues[cfg.GeneralSettings.worker_type()]
     argv = ['worker', '--concurrency=1', f'--queues={worker_queue}', '--pool=solo', '--loglevel=INFO', '-Ofair']
-    print('Starting worker of type {} and UID of {} on queue {}...'.format(cfg.GeneralSettings.WORKER_TYPE,
+    logger.info('Starting worker of type {} and UID of {} on queue {}...'.format(cfg.GeneralSettings.WORKER_TYPE,
                                                                            cfg.GeneralSettings.WORKER_UID,
                                                                            worker_queue))
     worker = app.worker_main(argv)
