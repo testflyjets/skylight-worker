@@ -3,12 +3,16 @@ import logging
 import os
 import platform
 import signal
+import sys
 import tempfile
 import time
 import traceback
 from datetime import datetime, timezone
 from typing import Optional
 from celery.exceptions import MaxRetriesExceededError
+
+# Disable SeleniumBase colored tracebacks to prevent terminal issues during shutdown
+os.environ['DISABLE_COLORED_TRACEBACK'] = '1'
 
 import celery
 from celery import signals
@@ -274,21 +278,28 @@ def work(self, request, job_uid: str):
             if len(blocked_urls) > 0:
                 task_service.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": blocked_urls})
                 task_service.driver.execute_cdp_cmd('Network.enable', {})
+            
+            # Process the request using the task service
             response = task_service.process(initial_url, temp_dir)
+            
+            # Re-enable loading of blocked URLS like recaptcha or google tag
             if len(blocked_urls) > 0:
                 task_service.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": []})
                 task_service.driver.execute_cdp_cmd('Network.enable', {})
-            logger.info(f' process Total processing execution time for job {job_uid} is ' + str(
-                time_diff_ms(datetime.now(), time_started)) + ' ms.')
-            meta['processing_total'] = time_diff_ms(datetime.now(), time_started)
+                
+            processing_total = time_diff_ms(datetime.now(), time_started)
+            logger.info(f'Total processing execution time for job {job_uid} is ' + str(
+                processing_total) + ' ms.')
+            meta['processing_total'] = processing_total
         
         # Job complete, encode the result
         if meta is not None:
             rds.set('job.{}'.format(job_uid), json.dumps(meta, default=date_encoder))
+
         return response_encoder.encode(response)
 
     except TimeoutException as e:
-        logger.error("Timeout error, please try again: {} - {}".format(e, traceback.format_exc()))
+        logger.error(f"TimeoutException caught for job {job_uid}: {e} - {traceback.format_exc()}")
         task_service.shutdown()
         logger.error(f'Terminating process with ID of {os.getpid()} due to Timeout exception')
         os.kill(os.getpid(), signal.SIGKILL)
@@ -320,12 +331,24 @@ def work(self, request, job_uid: str):
         logger.error(f'Terminating process with ID of {os.getpid()} due to Exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
-    finally:
-       logger.warning('Unhandled branch in task_worker.work')
+    except BaseException as be:
+        logger.critical("Unexpected base exception: {} - {}".format(be, traceback.format_exc()))
+        task_service.shutdown()
+        logger.critical(f'Terminating process with ID of {os.getpid()} due to BaseException')
+        os.kill(os.getpid(), signal.SIGKILL)
+        return None
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully"""
+    logger.info(f'Received signal {signum}, shutting down...')
+    sys.exit(0)
 
 if __name__ == '__main__' or __name__ == 'main':
     load_dotenv()
+
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     logger.info('Connecting to Redis ...')
     rds = cfg.RedisSettings.rds()
@@ -356,5 +379,25 @@ if __name__ == '__main__' or __name__ == 'main':
     logger.info('Starting worker of type {} and UID of {} on queue {}...'.format(cfg.GeneralSettings.WORKER_TYPE,
                                                                            cfg.GeneralSettings.WORKER_UID,
                                                                            worker_queue))
-    worker = app.worker_main(argv)
-    worker.start()
+
+    # Verify Celery app configuration
+    logger.debug(f'Celery app broker: {app.conf.broker_url}')
+    logger.debug(f'Celery app backend: {app.conf.result_backend}')
+    logger.debug(f'Registered tasks: {list(app.tasks.keys())}')
+    try:
+        logger.debug(f'Creating Celery worker with args: {argv}')
+        worker = app.worker_main(argv)
+        if worker is not None:
+            logger.info('Celery worker created successfully, starting...')
+            worker.start()
+        else:
+            logger.error('Failed to create Celery worker - worker_main returned None')
+    except KeyboardInterrupt:
+        logger.info('Received keyboard interrupt during worker startup, shutting down gracefully...')
+        sys.exit(0)
+    except SystemExit:
+        logger.info('Received system exit signal, shutting down gracefully...')
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f'Error starting worker: {e}', exc_info=True)
+        sys.exit(1)
