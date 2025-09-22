@@ -4,6 +4,7 @@ import random
 import shutil
 import time
 import urllib.parse
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 from uuid import uuid4
@@ -41,6 +42,20 @@ minimum_recaptcha_scores = {
 }
 
 from selenium_worker.utils import check_recaptcha_score
+
+
+@dataclass
+class PageSetupConfig:
+    """Configuration class for tearup and teardown page setup operations."""
+    initial_url: str
+    downloads_path: str
+    attempts: int = 3
+    print_ip_addresses: bool = True
+    max_attempts: int = 10
+    recaptcha_score_threshold: int = 7
+    proxy_variation: Optional[str] = None
+    rds: Optional[Redis] = None
+
 
 class TaskService:
     RQ: WorkTaskRQ
@@ -193,12 +208,19 @@ class TaskService:
         return self.user_data_dir
 
     # Prepare the state page before submitting form data with ID/DL data
-    def tearup(self, initial_url: str, downloads_path: str, rds: Redis | None = None,
-               attempts: Optional[int] = 3, print_ip_addresses: bool = True, max_attempts: int = 10,
-               recaptcha_score_threshold: int = 7, proxy_variation: Optional[str] = None) -> list[str]:
-        self.log(f'Obtaining the page with URL {initial_url}')
-        self.driver.get(initial_url)
-        self.log(f'Waiting for {initial_url} to load ...')
+    def tearup(self, config: PageSetupConfig) -> list[str]:
+        """
+        Prepare the state page before submitting form data with ID/DL data.
+
+        Args:
+            config: Configuration object containing all setup parameters
+
+        Returns:
+            List of log messages from the response
+        """
+        self.log(f'Obtaining the page with URL {config.initial_url}')
+        self.driver.get(config.initial_url)
+        self.log(f'Waiting for {config.initial_url} to load ...')
 
         while True:
             try:
@@ -210,19 +232,25 @@ class TaskService:
             except Exception:
                 pass
             time.sleep(0.1)
-        self.log(f'Page {initial_url} has loaded')
+        self.log(f'Page {config.initial_url} has loaded')
         return self.RS.Logs
 
     # Prepare the state page after ID/DL data was obtained
-    def teardown(self, initial_url: str, downloads_path: str = None, rds: Redis | None = None,
-                 attempts: Optional[int] = 3,
-                 print_ip_addresses: bool = True, max_attempts: int = 10,
-                 recaptcha_score_threshold: int = 7, proxy_variation: Optional[str] = None) -> list[str]:
-        logs = list[str]()
-        logs.append(f'Obtaining the page with URL {initial_url}')
-        self.driver.get(initial_url)
+    def teardown(self, config: PageSetupConfig) -> list[str]:
+        """
+        Prepare the state page after ID/DL data was obtained.
 
-        logs.append(f'Waiting for {initial_url} to load ...')
+        Args:
+            config: Configuration object containing all setup parameters
+
+        Returns:
+            List of log messages from the response
+        """
+        logs = list[str]()
+        logs.append(f'Obtaining the page with URL {config.initial_url}')
+        self.driver.get(config.initial_url)
+
+        logs.append(f'Waiting for {config.initial_url} to load ...')
 
         while True:
             try:
@@ -234,7 +262,7 @@ class TaskService:
             except Exception:
                 pass
             time.sleep(0.1)
-        logs.append(f'Page {initial_url} has loaded')
+        logs.append(f'Page {config.initial_url} has loaded')
         return logs
 
     # Enters the data and obtains driver license validation results

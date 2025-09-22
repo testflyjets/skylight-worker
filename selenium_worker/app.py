@@ -26,7 +26,7 @@ from selenium.common import TimeoutException, WebDriverException
 import selenium_worker.config as cfg
 from selenium_worker.Requests.WorkTaskRQ import WorkTaskRQ, WorkTaskRQEncoder
 from selenium_worker.Responses.WorkTaskRS import WorkTaskRS, WorkTaskRSEncoder
-from selenium_worker.Services.TaskService import TaskService
+from selenium_worker.Services.TaskService import TaskService, PageSetupConfig
 from selenium_worker.exceptions import RetryException
 from selenium_worker.vars import task_type_classes, task_page_urls, task_type_names, \
     worker_type_minimum_recaptcha_scores, task_queues, task_names
@@ -104,8 +104,13 @@ def init(**args):
         task_service.driver.switch_to.window(task_service.driver.current_window_handle)
 
         logger.info(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-UP BEGIN ===')
-        task_service.tearup(initial_url=initial_url, downloads_path=cfg.CacheSettings.DOWNLOADS_PATH,
-                            rds=rds, recaptcha_score_threshold=minimum_recaptcha_score)
+        tearup_config = PageSetupConfig(
+            initial_url=initial_url,
+            downloads_path=cfg.CacheSettings.DOWNLOADS_PATH,
+            recaptcha_score_threshold=minimum_recaptcha_score,
+            rds=rds
+        )
+        task_service.tearup(tearup_config)
         logger.info(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-UP COMPLETE ===')
         return None
 
@@ -185,8 +190,13 @@ def should_restart(**args):
                     task_service.driver.switch_to.window(task_service.driver.current_window_handle)
                     logger.info(f'=== {task_type_names[cfg.GeneralSettings.worker_type()]} TEAR-DOWN BEGIN ===')
 
-                    task_service.teardown(initial_url=initial_url, downloads_path=cfg.CacheSettings.DOWNLOADS_PATH,
-                                          rds=rds, recaptcha_score_threshold=minimum_recaptcha_score)
+                    teardown_config = PageSetupConfig(
+                        initial_url=initial_url,
+                        downloads_path=cfg.CacheSettings.DOWNLOADS_PATH,
+                        recaptcha_score_threshold=minimum_recaptcha_score,
+                        rds=rds
+                    )
+                    task_service.teardown(teardown_config)
 
                     response = WorkTaskRS()
                     response.Logs = list()

@@ -10,11 +10,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from selenium_worker.Requests.MontgomeryCountyAirParkTaskRQ import MontgomeryCountyAirParkTaskRQ
 from selenium_worker.Responses.MontgomeryCountyAirParkTaskRS import MontgomeryCountyAirParkTaskRS
-from selenium_worker.Services.TaskService import TaskService
+from selenium_worker.Services.TaskService import TaskService, PageSetupConfig
 from selenium_worker.constants import STAGE_OBTAINED_PAGE
 from selenium_worker.exceptions import RetryException
 
 logger = logging.getLogger(__name__)
+
 
 class MontgomeryCountyAirParkTask(TaskService):
     RQ: MontgomeryCountyAirParkTaskRQ
@@ -25,35 +26,39 @@ class MontgomeryCountyAirParkTask(TaskService):
 
         # Enters the data and prepares the state for data processing
 
-    def tearup(self, 
-        initial_url: str, 
-        downloads_path: str, 
-        rds: Optional[Redis] = None,
-        attempts: Optional[int] = 3, 
-        print_ip_addresses: bool = True, 
-        max_attempts: int = 10,
-        recaptcha_score_threshold: int = 7, 
-        proxy_variation: Optional[str] = None) -> list[str]:
-        
-        for retry in range(attempts):
-            self.log(f'Retrying to get to Maryland page during tearup: {retry + 1} out of {attempts}')
-            changed = self.change_proxy_repeat(print_ip_addresses, max_attempts,
-                                               recaptcha_score_threshold, proxy_variation)
+    def _execute_page_setup(self, method_name: str, config: PageSetupConfig) -> list[str]:
+        """
+        Common implementation for tearup and teardown methods.
+
+        Args:
+            method_name: The name of the calling method for logging purposes
+            config: Configuration object containing all setup parameters
+
+        Returns:
+            List of log messages from the response
+
+        Raises:
+            Exception: If unable to obtain Maryland page after all attempts
+        """
+        for retry in range(config.attempts):
+            self.log(f'Retrying to get to Maryland page during {method_name}: {retry + 1} out of {config.attempts}')
+            changed = self.change_proxy_repeat(config.print_ip_addresses, config.max_attempts,
+                                               config.recaptcha_score_threshold, config.proxy_variation)
             if changed != '':
                 self.log(changed)
                 continue
             else:
-                self.log('Proxy successfully changed during tearup')
+                self.log(f'Proxy successfully changed during {method_name}')
 
             # Disable loading of blocked URLS like recaptcha or google tag
             blocked_urls = self.get_prepare_block_urls()
             if len(blocked_urls) > 0:
                 self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": blocked_urls})
                 self.driver.execute_cdp_cmd('Network.enable', {})
-                
+
             # Prepare the page for submission
-            self.RS = self.prepare(initial_url, downloads_path)
-            
+            self.RS = self.prepare(config.initial_url, config.downloads_path)
+
             # Re-enable loading of blocked URLS like recaptcha or google tag
             if len(blocked_urls) > 0:
                 self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": []})
@@ -61,46 +66,31 @@ class MontgomeryCountyAirParkTask(TaskService):
 
             return self.RS.Logs
 
-        raise Exception(f'Failed to obtain Maryland page during tearup after {attempts} attempts')
+        raise Exception(f'Failed to obtain Maryland page during {method_name} after {config.attempts} attempts')
 
-    def teardown(self, 
-            initial_url: str, 
-            downloads_path: str = None, 
-            rds: Redis | None = None,
-            attempts: Optional[int] = 3, 
-            print_ip_addresses: bool = True, 
-            max_attempts: int = 10,
-            recaptcha_score_threshold: int = 7, 
-            proxy_variation: Optional[str] = None) -> list[str]:
-        
-        for retry in range(attempts):
-            self.log(f'Retrying to get to Maryland page during teardown: {retry + 1} out of {attempts}')
-            changed = self.change_proxy_repeat(print_ip_addresses, max_attempts, recaptcha_score_threshold,
-                                               proxy_variation)
-            if changed != '':
-                self.log(changed)
-                continue
-            else:
-                self.log('Proxy successfully changed during teardown')
-                self.RS = self.prepare(initial_url, downloads_path)
+    def tearup(self, config: PageSetupConfig) -> list[str]:
+        """
+        Prepare the state page before submitting form data with ID/DL data.
 
-            # Disable loading of blocked URLS like recaptcha or google tag
-            blocked_urls = self.get_prepare_block_urls()
-            if len(blocked_urls) > 0:
-                self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": blocked_urls})
-                self.driver.execute_cdp_cmd('Network.enable', {})
-                
-            # Prepare the page for submission
-            self.RS = self.prepare(initial_url, downloads_path)
-            
-            # Re-enable loading of blocked URLS like recaptcha or google tag
-            if len(blocked_urls) > 0:
-                self.driver.execute_cdp_cmd('Network.setBlockedURLs', {"urls": []})
-                self.driver.execute_cdp_cmd('Network.enable', {})
+        Args:
+            config: Configuration object containing all setup parameters
 
-            return self.RS.Logs
+        Returns:
+            List of log messages from the response
+        """
+        return self._execute_page_setup("tearup", config)
 
-        raise Exception(f'Failed to obtain Maryland page during teardown after {attempts} attempts')
+    def teardown(self, config: PageSetupConfig) -> list[str]:
+        """
+        Prepare the state page after ID/DL data was obtained.
+
+        Args:
+            config: Configuration object containing all setup parameters
+
+        Returns:
+            List of log messages from the response
+        """
+        return self._execute_page_setup("teardown", config)
 
     def prepare(self, initial_url: str, downloads_path: str) -> MontgomeryCountyAirParkTaskRS:
         try:
