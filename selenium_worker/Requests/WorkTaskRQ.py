@@ -4,6 +4,7 @@ from json import JSONEncoder
 class WorkTaskRQ:
     Type: str = ''
     SessionUID: str = ''
+    CallbackURL: str = ''
     
     # Task retry parameters
     Countdown: int = 0

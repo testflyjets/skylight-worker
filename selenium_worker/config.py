@@ -38,7 +38,7 @@ class GeneralSettings(BaseConfig):
     ENVIRONMENT = 'dev' if not os.getenv('ENVIRONMENT') else os.getenv('ENVIRONMENT')
     WORKER_UID = uuid.uuid4().__str__() if not os.getenv("WORKER_UID") else os.getenv("WORKER_UID")
     BROWSER_DRIVER_TYPE = 'chrome' if not os.getenv('BROWSER_DRIVER_TYPE') else os.getenv('BROWSER_DRIVER_TYPE')
-    WORKER_TYPE = 1 if not os.getenv('WORKER_TYPE') else int(os.getenv('WORKER_TYPE'))
+    WORKER_TYPE = 'KGAI' if not os.getenv('WORKER_TYPE') else os.getenv('WORKER_TYPE')
 
     @staticmethod
     def browser_driver_type() -> BrowserDriverType:
@@ -51,8 +51,10 @@ class GeneralSettings(BaseConfig):
     @staticmethod
     def worker_type() -> WorkerType:
         worker_value = GeneralSettings.WORKER_TYPE
-        if worker_value == 1:
+        if worker_value == 'KGAI':
             return WorkerType.Montgomery
+        elif worker_value == 'FAA':
+            return WorkerType.FAA
 
         return WorkerType.Unknown
 
@@ -74,11 +76,12 @@ class NopeCHASettings(BaseConfig):
 
     @staticmethod
     def to_string():
-        return "URL={}, KEY={}, AUTO_OPEN={}, PLUGIN_CFG_PATH={}".format(NopeCHASettings.API_URL,
-                                                                         NopeCHASettings.API_KEY[
-                                                                             5] if NopeCHASettings.API_KEY else '',
-                                                                         NopeCHASettings.AUTO_OPEN,
-                                                                         NopeCHASettings.PLUGIN_CFG_PATH)
+        return "URL={}, KEY={}, AUTO_OPEN={}, PLUGIN_CFG_PATH={}".format(
+            NopeCHASettings.API_URL,
+            NopeCHASettings.API_KEY[5] if NopeCHASettings.API_KEY else '',
+            NopeCHASettings.AUTO_OPEN,
+            NopeCHASettings.PLUGIN_CFG_PATH
+        )
 
 
 class BrowserSettings(BaseConfig):
@@ -108,7 +111,6 @@ class BrowserSettings(BaseConfig):
             BrowserSettings.CHROME_INCOGNITO, BrowserSettings.CHROME_HEADLESS, BrowserSettings.FIREFOX_INCOGNITO,
             BrowserSettings.FIREFOX_HEADLESS)
 
-
 class RedisSettings(BaseConfig):
     REDIS_HOST: Optional[str] = '127.0.0.1' if not os.getenv('REDIS_HOST') else os.getenv('REDIS_HOST')
     REDIS_PORT: Optional[int] = 6379 if not os.getenv('REDIS_PORT') else os.getenv('REDIS_PORT')
@@ -120,7 +122,6 @@ class RedisSettings(BaseConfig):
     @staticmethod
     def to_string():
         return "HOST={}, PORT={}".format(RedisSettings.REDIS_HOST, RedisSettings.REDIS_PORT)
-
 
 class APISettings(BaseConfig):
     # Stores external URL to the API
@@ -159,14 +160,15 @@ class ProxySettings(BaseConfig):
     @staticmethod
     def to_string():
         return ("PROTOCOL={}, HOSTNAME={}, USERNAME={}, PASSWORD={}, DEFAULT_PROXY_DOMAINS={}, PROXY_VARIATION={}, "
-                "PROXIED_URL={}, UNPROXIED_URL={}").format(ProxySettings.PROTOCOL, ProxySettings.HOSTNAME,
-                                                           ProxySettings.USERNAME,
-                                                           ProxySettings.PASSWORD[3] if ProxySettings.PASSWORD else '',
-                                                           ProxySettings.DEFAULT_PROXY_DOMAINS,
-                                                           ProxySettings.PROXY_VARIATION,
-                                                           ProxySettings.PROXIED_IP_SERVICE_URL,
-                                                           ProxySettings.UNPROXIED_IP_SERVICE_URL)
-
+                "PROXIED_URL={}, UNPROXIED_URL={}").format(
+                    ProxySettings.PROTOCOL, ProxySettings.HOSTNAME,
+                    ProxySettings.USERNAME,
+                    ProxySettings.PASSWORD[3] if ProxySettings.PASSWORD else '',
+                    ProxySettings.DEFAULT_PROXY_DOMAINS,
+                    ProxySettings.PROXY_VARIATION,
+                    ProxySettings.PROXIED_IP_SERVICE_URL,
+                    ProxySettings.UNPROXIED_IP_SERVICE_URL
+                )
 
 class CacheSettings(BaseConfig):
     DOWNLOADS_PATH = '/var/tmp/cache' if not os.getenv('DOWNLOADS_PATH') else os.getenv('DOWNLOADS_PATH')
@@ -183,10 +185,14 @@ class CacheSettings(BaseConfig):
     @staticmethod
     def to_string():
         return ("DOWNLOADS_PATH={}, BROWSER_PATH={}, DATA_PATH={}, DISK_PATH={}, GLOBALCACHE_PATH={}, "
-                "CACHE_USE={}").format(CacheSettings.DOWNLOADS_PATH, CacheSettings.BROWSER_PATH,
-                                       CacheSettings.DATA_PATH,
-                                       CacheSettings.DISK_PATH, CacheSettings.GLOBALCACHE_PATH, CacheSettings.CACHE_USE)
-
+                "CACHE_USE={}").format(
+                    CacheSettings.DOWNLOADS_PATH, 
+                    CacheSettings.BROWSER_PATH,
+                    CacheSettings.DATA_PATH,
+                    CacheSettings.DISK_PATH, 
+                    CacheSettings.GLOBALCACHE_PATH, 
+                    CacheSettings.CACHE_USE
+                )
 
 class ExtensionSettings(BaseConfig):
     PYPASSER_PLUGIN_CONFIG_PATH: Optional[str] = os.getenv(

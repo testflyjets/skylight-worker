@@ -1,9 +1,9 @@
 from json import JSONEncoder
 
-from selenium_worker.Responses.WorkTaskRS import WorkTaskRS
+from selenium_worker.Responses.ComplaintTaskRS import ComplaintTaskRS
 
 
-class MontgomeryCountyAirParkTaskRS(WorkTaskRS):
+class MontgomeryCountyAirParkTaskRS(ComplaintTaskRS):
     pass
 
 class MontgomeryCountyAirParkTaskRSEncoder(JSONEncoder):

@@ -11,6 +11,8 @@ from datetime import datetime, timezone
 from typing import Optional
 from celery.exceptions import MaxRetriesExceededError
 
+from selenium_worker.Requests.ComplaintTaskRQ import ComplaintTaskRQ, ComplaintTaskRQEncoder
+
 # Disable SeleniumBase colored tracebacks to prevent terminal issues during shutdown
 os.environ['DISABLE_COLORED_TRACEBACK'] = '1'
 
@@ -24,8 +26,7 @@ from requests.exceptions import ProxyError
 from selenium.common import TimeoutException, WebDriverException
 
 import selenium_worker.config as cfg
-from selenium_worker.Requests.WorkTaskRQ import WorkTaskRQ, WorkTaskRQEncoder
-from selenium_worker.Responses.WorkTaskRS import WorkTaskRS, WorkTaskRSEncoder
+from selenium_worker.Responses.ComplaintTaskRS import ComplaintTaskRS, ComplaintTaskRSEncoder
 from selenium_worker.Services.TaskService import TaskService, PageSetupConfig
 from selenium_worker.exceptions import RetryException
 from selenium_worker.vars import task_type_classes, task_page_urls, task_type_names, \
@@ -198,7 +199,7 @@ def should_restart(**args):
                     )
                     task_service.teardown(teardown_config)
 
-                    response = WorkTaskRS()
+                    response = ComplaintTaskRS()
                     response.Logs = list()
                     response.Error = ''
                     task_service.RS = response
@@ -224,12 +225,12 @@ def work(self, request, job_uid: str):
 
     meta = None
 
-    request_encoder = WorkTaskRQEncoder()
-    rq = WorkTaskRQ(request)
-    response = WorkTaskRS()
+    request_encoder = ComplaintTaskRQEncoder()
+    rq = ComplaintTaskRQ(request)
+    response = ComplaintTaskRS()
     response.Logs = list()
     response.Error = ''
-    response_encoder = WorkTaskRSEncoder()
+    response_encoder = ComplaintTaskRSEncoder()
 
     try:
         if task_service is None:
@@ -259,7 +260,7 @@ def work(self, request, job_uid: str):
             task_type_classes[WorkerType(rq.Type)][:]
         initial_url = task_page_urls[WorkerType(rq.Type)]
 
-        request: WorkTaskRQ = request_type(request)
+        request: ComplaintTaskRQ = request_type(request)
         request_encoder = request_encoder_type()
 
         response = response_type()

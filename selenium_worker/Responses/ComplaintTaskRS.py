@@ -1,7 +1,6 @@
 from json import JSONEncoder
 
-
-class WorkTaskRS:
+class ComplaintTaskRS:
     Errors = []
     Logs = []
     State: int = 0
@@ -9,6 +8,6 @@ class WorkTaskRS:
     def __init__(self):
         pass
 
-class WorkTaskRSEncoder(JSONEncoder):
+class ComplaintTaskRSEncoder(JSONEncoder):
     def default(self, o):
         return o.__dict__

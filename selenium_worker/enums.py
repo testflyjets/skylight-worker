@@ -1,6 +1,5 @@
 from enum import Enum, StrEnum
 
-
 class BrowserDriverType(Enum):
     Unknown = 0
     Chrome = 1
@@ -11,6 +10,6 @@ class ProxyVariation(StrEnum):
     EXCLUSIVE = 'EXCLUSIVE'
 
 class WorkerType(Enum):
-    Unknown = 0
-    Montgomery = 1
-    FAA = 2
+    Unknown = "UNKNOWN"
+    Montgomery = "KGAI"
+    FAA = "FAA"

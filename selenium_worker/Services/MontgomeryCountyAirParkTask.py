@@ -124,11 +124,11 @@ class MontgomeryCountyAirParkTask(TaskService):
     def process(self, initial_url: str, downloads_path: str) -> MontgomeryCountyAirParkTaskRS:
         # Comment out for testing
         
-        # try:
-        #     # Fill all the basic form fields
-        #     self.fill_form_field(By.ID, 'First Name', 'first name', self.RQ.FirstName)
-        #     self.fill_form_field(By.ID, 'Last Name', 'last name', self.RQ.LastName)
-        #     self.fill_form_field(By.ID, 'email', 'e-mail address', self.RQ.EmailAddress)
+        try:
+            # Fill all the basic form fields
+            self.fill_form_field(By.ID, 'First Name', 'first name', self.RQ.FirstName)
+            self.fill_form_field(By.ID, 'Last Name', 'last name', self.RQ.LastName)
+            self.fill_form_field(By.ID, 'email', 'e-mail address', self.RQ.Email)
         #     self.fill_form_field(By.ID, 'Phone Number', 'phone number', self.RQ.PhoneNumber)
         #     self.fill_form_field(By.ID, 'Street Address Cross Streets', 'street address', self.RQ.StreetAddress)
         #     self.fill_form_field(By.ID, 'City', 'city address', self.RQ.CityAddress)
@@ -150,8 +150,8 @@ class MontgomeryCountyAirParkTask(TaskService):
         #     self.fill_form_field(By.ID, 'Description Question', 'description/question', self.RQ.DescriptionOrQuestion + ' (' + self.RQ.SessionUID + ')')
         #     self.fill_form_field(By.ID, 'Response requested', 'response request', self.RQ.ResponseRequested)
 
-        # except BaseException as ex:
-        #     return self.RS
+        except BaseException as ex:
+            return self.RS
 
         # for retries in range(3):
         #     if initial_url == self.driver.current_url:
@@ -172,5 +172,7 @@ class MontgomeryCountyAirParkTask(TaskService):
         #     raise RetryException('Failed to submit the form with provided data')
 
         # Callback here
+        self.log('Sending callback to ' + self.RQ.CallbackUrl)
+        
         self.RS.Body = "All done successfully"
         return self.RS

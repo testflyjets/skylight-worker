@@ -21,9 +21,9 @@ from urllib3.exceptions import MaxRetryError
 
 from selenium.webdriver.remote.webelement import WebElement
 from selenium_worker import config as cfg
+from selenium_worker.Requests.ComplaintTaskRQ import ComplaintTaskRQ
 from selenium_worker.Requests.MontgomeryCountyAirParkTaskRQ import MontgomeryCountyAirParkTaskRQ
-from selenium_worker.Requests.WorkTaskRQ import WorkTaskRQ
-from selenium_worker.Responses.WorkTaskRS import WorkTaskRS
+from selenium_worker.Responses.ComplaintTaskRS import ComplaintTaskRS
 from selenium_worker.enums import BrowserDriverType
 from selenium_worker.utils import get_actual_ip_address, get_proxied_ip_address
 
@@ -58,16 +58,16 @@ class PageSetupConfig:
 
 
 class TaskService:
-    RQ: WorkTaskRQ
-    RS: WorkTaskRS
+    RQ: ComplaintTaskRQ
+    RS: ComplaintTaskRS
     _sb_gen = None
     SB = None
     driver = None
     user_data_dir: str = ''
 
     def __init__(self):
-        self.RQ = WorkTaskRQ({})
-        self.RS = WorkTaskRS()
+        self.RQ = ComplaintTaskRQ({})
+        self.RS = ComplaintTaskRS()
 
     def shutdown(self, remove_user_data: bool = True):
         if self.SB:
@@ -266,19 +266,19 @@ class TaskService:
         return logs
 
     # Enters the data and obtains driver license validation results
-    def process(self, initial_url: str, downloads_path: str) -> WorkTaskRS:
-        response = WorkTaskRS()
+    def process(self, initial_url: str, downloads_path: str) -> ComplaintTaskRS:
+        response = ComplaintTaskRS()
         response.Error = "Not Implemented"
         return response
 
     # Enters the data and prepares the state for data processing
-    def prepare(self, initial_url: str, downloads_path: str) -> WorkTaskRS:
-        response = WorkTaskRS()
+    def prepare(self, initial_url: str, downloads_path: str) -> ComplaintTaskRS:
+        response = ComplaintTaskRS()
         response.Error = "Not Implemented"
         return response
 
     # Load a page with a timeout
-    def load_page(self, initial_url: str, timeout_in_ms: int) -> WorkTaskRS:
+    def load_page(self, initial_url: str, timeout_in_ms: int) -> ComplaintTaskRS:
         try:
             if timeout_in_ms > 0:
                 self.driver.set_page_load_timeout(timeout_in_ms / 1000)
@@ -290,7 +290,7 @@ class TaskService:
 
         return self.RS
 
-    def wait_for_page_to_load(self, timeout_in_ms: int = 5000) -> WorkTaskRS:
+    def wait_for_page_to_load(self, timeout_in_ms: int = 5000) -> ComplaintTaskRS:
         try:
             self.RS.Body = self.driver.page_source
             if timeout_in_ms > 0:
@@ -305,7 +305,7 @@ class TaskService:
 
     # Wait for element to appear on the page and be clickable, with the timeout
     def wait_for_element_to_be_clickable(self, element: str, selector: str,
-                                         timeout_in_ms: int = 5000) -> WorkTaskRS:
+                                         timeout_in_ms: int = 5000) -> ComplaintTaskRS:
         if timeout_in_ms == 0:
             return self.RS
 
@@ -320,7 +320,7 @@ class TaskService:
 
     # Wait for element to appear on the page, with the timeout
     def wait_for_element_to_appear(self, element: str, selector: str,
-                                   timeout_in_ms: int = 5000) -> WorkTaskRS:
+                                   timeout_in_ms: int = 5000) -> ComplaintTaskRS:
         if timeout_in_ms == 0:
             return self.RS
 

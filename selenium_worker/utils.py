@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import platform
 import random
@@ -20,6 +21,8 @@ from seleniumbase import Driver
 
 from selenium_worker import config as cfg
 from selenium_worker.enums import BrowserDriverType
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     pass
@@ -174,7 +177,7 @@ def check_recaptcha_score(driver: Driver) -> int:
     else:
         score = int(float(results[0]) * 10)
 
-    print('Your recaptcha score is: {}'.format(score))
+    logger.info('Your recaptcha score is: {}'.format(score))
 
     try:
         cookies = driver.execute_cdp_cmd("Network.getAllCookies",

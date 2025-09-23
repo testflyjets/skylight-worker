@@ -2,7 +2,7 @@ from json import JSONEncoder
 from datetime import datetime
 from typing import Optional
 
-from selenium_worker.Requests.WorkTaskRQ import WorkTaskRQ
+from selenium_worker.Requests.ComplaintTaskRQ import ComplaintTaskRQ
 
 
 def parse_event_time(event_time_str: str) -> Optional[datetime]:
@@ -30,21 +30,7 @@ def parse_event_time(event_time_str: str) -> Optional[datetime]:
     return None
 
 
-class MontgomeryCountyAirParkTaskRQ(WorkTaskRQ):
-    FirstName: str = ''
-    LastName: str = ''
-    EmailAddress: str = ''
-    PhoneNumber: str = ''
-    StreetAddress: str = ''
-    CityAddress: str = ''
-    StateAddress: str = ''
-    ZIPAddress: str = ''
-    AirportSourceNameCode: str = ''
-    EventTime: str = ''
-    AircraftType: str = ''
-    DescriptionOrQuestion: str = ''
-    ResponseRequested: str = ''
-
+class MontgomeryCountyAirParkTaskRQ(ComplaintTaskRQ):
     # Computed properties (will be set in __init__)
     startDateTime: str = ''
     hiddenStartDateTime: str = ''
@@ -67,40 +53,6 @@ class MontgomeryCountyAirParkTaskRQ(WorkTaskRQ):
         else:
             self.startDateTime = ''
             self.hiddenStartDateTime = ''
-        
-    # Validate the request
-    def validate(self) -> list[str]:
-        Errors = []
-
-        if not self.FirstName:
-            Errors.append('Missing `FirstName` value')
-        if not self.LastName:
-            Errors.append('Missing `LastName` value')
-        if not self.EmailAddress:
-            Errors.append('Missing `EmailAddress` value')
-        if not self.PhoneNumber:
-            Errors.append('Missing `PhoneNumber` value')
-        if not self.StreetAddress:
-            Errors.append('Missing `StreetAddress` value')
-        if not self.CityAddress:
-            Errors.append('Missing `CityAddress` value')
-        if not self.StateAddress:
-            Errors.append('Missing `StateAddress` value')
-        if not self.ZIPAddress:
-            Errors.append('Missing `ZIPAddress` value')
-        if not self.AirportSourceNameCode:
-            Errors.append('Missing `AirportSourceNameCode` value')
-        if not self.EventTime:
-            Errors.append('Missing `EventTime` value')
-        if not self.AircraftType:
-            Errors.append('Missing `AircraftType` value')
-        if not self.DescriptionOrQuestion:
-            Errors.append('Missing `DescriptionOrQuestion` value')
-        if not self.ResponseRequested:
-            Errors.append('Missing `ResponseRequested` value')
-
-        return Errors
-
 
 class MontgomeryCountyAirParkTaskRQEncoder(JSONEncoder):
     def default(self, o):
