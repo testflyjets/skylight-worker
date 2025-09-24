@@ -152,7 +152,6 @@ def archive_user_data(state_iin: int, browser_driver_type: BrowserDriverType, us
 def time_diff_ms(date1: datetime, date2: datetime) -> int:
     return round((date1 - date2).total_seconds() * 1000 + (date1 - date2).microseconds / 1000)
 
-
 def get_proxied_ip_address(driver: Driver) -> str:
     driver.get(cfg.ProxySettings.PROXIED_IP_SERVICE_URL)
     matches = re.findall(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", driver.page_source)

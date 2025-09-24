@@ -58,6 +58,10 @@ class PageSetupConfig:
     proxy_variation: Optional[str] = None
     rds: Optional[Redis] = None
 
+class ProxyConfig:
+    proxiy_ip: str = ''
+    proxy_change_attempts: int = 0
+    recaptcha_score: int = 0
 
 class TaskService:
     RQ: ComplaintTaskRQ
@@ -66,10 +70,12 @@ class TaskService:
     SB = None
     driver = None
     user_data_dir: str = ''
+    proxy_config: ProxyConfig
 
     def __init__(self):
         self.RQ = ComplaintTaskRQ({})
         self.RS = ComplaintTaskRS()
+        self.proxy_config = ProxyConfig()
 
     def shutdown(self, remove_user_data: bool = True):
         if self.SB:
@@ -353,6 +359,8 @@ class TaskService:
 
                 time.sleep(random.uniform(PROXY_CHANGE_WAIT_LOWER_BOUND, PROXY_CHANGE_WAIT_UPPER_BOUND))
                 recaptcha_score = check_recaptcha_score(self.driver)
+                self.proxy_config.recaptcha_score = recaptcha_score
+                
                 if recaptcha_score >= recaptcha_score_threshold:
                     self.log('Recaptcha proxy score obtained: {} above or equal to {} '.format(str(recaptcha_score),
                                                                                                str(recaptcha_score_threshold)))
@@ -371,7 +379,10 @@ class TaskService:
             proxy_variation: Optional[str] = None,
             min_score: int = 3, 
             max_score: int = 10) -> Optional[str]:
+        
         changed = ''
+        self.proxy_config.proxy_change_attempts += 1
+        
         if proxy_variation is None or proxy_variation == '':
             proxy_variation = cfg.ProxySettings.PROXY_VARIATION
 
@@ -392,8 +403,11 @@ class TaskService:
                 logger.info(
                     'Making request to ' + f'{cfg.APISettings.url()}/get_proxy_details_fake?' + urllib.parse.urlencode(
                         redacted_query_args))
+                
+                # Make a request to API to obtain proxy details
                 self.driver.get(
                     f'{cfg.APISettings.url()}/get_proxy_details_fake?' + urllib.parse.urlencode(query_args))
+                
                 self.log(f'Proxy change request is completed')
             except BaseException as e:
                 changed = 'Failed to change proxy: ' + str(e)
@@ -404,6 +418,11 @@ class TaskService:
         if 'The proxy server is refusing connections' in self.driver.page_source:
             return 'The proxy server is refusing connections'
 
+        self._capture_final_proxy_info(print_ip_addresses)
+
+        return changed
+
+    def _capture_final_proxy_info(self, print_ip_addresses: bool = True):
         if print_ip_addresses:
             time.sleep(0.5)
             try:
@@ -414,12 +433,11 @@ class TaskService:
             try:
                 # For proxy change obtain it via Selenium because request-based will obtain it from Redis
                 proxied_ip_address = get_proxied_ip_address(self.driver)
+                self.proxy_config.proxied_ip = proxied_ip_address
                 logger.info('Proxied IP address: {}'.format(proxied_ip_address))
             except Exception as e:
                 logger.warning('Failed to obtain proxied IP address: {}'.format(e))
-
-        return changed
-
+    
     def get_prepare_block_urls(self):
         return []
 
@@ -471,10 +489,12 @@ class TaskService:
             verification_request = SubmissionVerificationTaskRQ({})
             verification_request.Id = self.RQ.ComplaintUuid
             verification_request.SubmissionVerified = verified
-            verification_request.SubmitterIp = submitter_ip
+            verification_request.SubmitterIp = self.proxy_config.proxiy_ip
             verification_request.SubmissionError = error_message
             verification_request.ErrorBacktrace = error_backtrace
             verification_request.SubmissionDetails = submission_details if submission_details is not None else {}
+            verification_request.SubmissionDetails['recaptcha_score'] = self.proxy_config.recaptcha_score
+            verification_request.SubmissionDetails['proxy_change_attempts'] = self.proxy_config.proxy_change_attempts
 
             # Send POST request
             headers = {
