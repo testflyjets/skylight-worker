@@ -17,6 +17,43 @@ worker_prefetch_multiplier = 1
 worker_send_task_events = True
 task_send_sent_event = True
 
+# Time synchronization settings to prevent clock drift warnings
+worker_disable_rate_limits = True
+worker_enable_remote_control = True
+worker_send_task_events = True
+task_send_sent_event = True
+task_track_started = True
+task_time_limit = 30 * 60  # 30 minutes
+task_soft_time_limit = 25 * 60  # 25 minutes
+worker_max_tasks_per_child = 1000
+worker_max_memory_per_child = 200000  # 200MB
+
+# Redis broker transport options for better time handling
+broker_transport_options = {
+    'visibility_timeout': 3600,
+    'fanout_prefix': True,
+    'fanout_patterns': True,
+    'socket_keepalive': True,
+    'socket_keepalive_options': {
+        'TCP_KEEPIDLE': 1,
+        'TCP_KEEPINTVL': 3,
+        'TCP_KEEPCNT': 5,
+    },
+    'retry_on_timeout': True,
+    'health_check_interval': 30,
+}
+
+# Result backend settings
+result_backend_transport_options = {
+    'retry_on_timeout': True,
+    'socket_keepalive': True,
+    'socket_keepalive_options': {
+        'TCP_KEEPIDLE': 1,
+        'TCP_KEEPINTVL': 3,
+        'TCP_KEEPCNT': 5,
+    },
+}
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)

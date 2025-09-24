@@ -46,6 +46,9 @@ app = celery.Celery(
     broker="redis://{}:{}".format(cfg.RedisSettings.REDIS_HOST, cfg.RedisSettings.REDIS_PORT),
     backend="redis://{}:{}".format(cfg.RedisSettings.REDIS_HOST, cfg.RedisSettings.REDIS_PORT)
 )
+
+# Celery configuration will be loaded from config module via app.config_from_object(cfg) later
+
 logger.info('Celery application was created successfully')
 
 @signals.worker_process_init.connect
@@ -385,10 +388,24 @@ if __name__ == '__main__' or __name__ == 'main':
         raise Exception(f'Missing mount for {cfg.CacheSettings.GLOBALCACHE_PATH}')
 
     worker_queue = task_queues[cfg.GeneralSettings.worker_type()]
-    argv = ['worker', '--concurrency=1', f'--queues={worker_queue}', '--pool=solo', '--loglevel=INFO', '-Ofair']
-    logger.info('Starting worker of type {} and UID of {} on queue {}...'.format(cfg.GeneralSettings.WORKER_TYPE,
+    # Use unique node name to avoid duplicate node warnings when running multiple workers
+    node_name = f'worker-{cfg.GeneralSettings.WORKER_UID}'
+    argv = [
+        'worker',
+        '--concurrency=1',
+        f'--queues={worker_queue}',
+        '--pool=solo',
+        '--loglevel=INFO',
+        '-Ofair',
+        f'-n={node_name}',
+        '--without-gossip',  # Disable gossip to reduce network chatter
+        '--without-mingle',  # Disable mingle to reduce startup time
+        '--without-heartbeat',  # Disable heartbeat to reduce clock sync issues
+    ]
+    logger.info('Starting worker of type {} and UID of {} on queue {} with node name {}...'.format(cfg.GeneralSettings.WORKER_TYPE,
                                                                            cfg.GeneralSettings.WORKER_UID,
-                                                                           worker_queue))
+                                                                           worker_queue,
+                                                                           node_name))
 
     # Verify Celery app configuration
     logger.debug(f'Celery app broker: {app.conf.broker_url}')
