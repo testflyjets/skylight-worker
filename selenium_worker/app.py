@@ -9,23 +9,18 @@ import time
 import traceback
 from datetime import datetime, timezone
 from typing import Optional
-from celery.exceptions import MaxRetriesExceededError
-
-from selenium_worker.Requests.ComplaintTaskRQ import ComplaintTaskRQ, ComplaintTaskRQEncoder
-
-# Disable SeleniumBase colored tracebacks to prevent terminal issues during shutdown
-os.environ['DISABLE_COLORED_TRACEBACK'] = '1'
 
 import celery
 from celery import signals
 from celery.concurrency import asynpool
+from celery.exceptions import MaxRetriesExceededError
 from dotenv import load_dotenv
 from pyvirtualdisplay import Display
 from pyvirtualdisplay.abstractdisplay import XStartTimeoutError
 from requests.exceptions import ProxyError
 from selenium.common import TimeoutException, WebDriverException
-
 import selenium_worker.config as cfg
+from selenium_worker.Requests.ComplaintTaskRQ import ComplaintTaskRQ, ComplaintTaskRQEncoder
 from selenium_worker.Responses.ComplaintTaskRS import ComplaintTaskRS, ComplaintTaskRSEncoder
 from selenium_worker.Services.TaskService import TaskService, PageSetupConfig
 from selenium_worker.exceptions import RetryException
@@ -34,6 +29,9 @@ from selenium_worker.vars import task_type_classes, task_page_urls, task_type_na
 from selenium_worker.enums import WorkerType
 from selenium_worker.utils import date_parser, date_encoder, build_pypasser_config_json, build_nopecha_config, \
     time_diff_ms
+
+# Disable SeleniumBase colored tracebacks to prevent terminal issues during shutdown
+os.environ['DISABLE_COLORED_TRACEBACK'] = '1'
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +128,6 @@ def init(**args):
         logger.error(f'Terminating worker process with UID of {os.getpid()} due to Exception')
         os.kill(os.getpid(), signal.SIGKILL)
         return None
-
 
 @signals.worker_process_shutdown.connect
 def deinit(**args):

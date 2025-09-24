@@ -22,10 +22,16 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 def get_config():
-    return {'general': GeneralSettings.to_string(), 'api': APISettings.to_string(), 'redis': RedisSettings.to_string(),
-            'proxy': ProxySettings.to_string(), 'cache': CacheSettings.to_string(),
-            'nopecha': NopeCHASettings.to_string(), 'browser': BrowserSettings.to_string(),
-            }
+    return {
+        'general': GeneralSettings.to_string(), 
+        'api': APISettings.to_string(), 
+        'redis': RedisSettings.to_string(),
+        'proxy': ProxySettings.to_string(),
+        'cache': CacheSettings.to_string(),
+        'nopecha': NopeCHASettings.to_string(), 
+        'browser': BrowserSettings.to_string(),
+        'airnoise': AirnoiseSettings.to_string()
+    }
 
 class BaseConfig:
     def __init__(self):
@@ -204,3 +210,12 @@ class ExtensionSettings(BaseConfig):
         str(Path(__file__).parent.parent.joinpath('plugins').joinpath('chrome_proxy_auth_plugin').joinpath(
             'background.js'))
     )
+
+class AirnoiseSettings(BaseConfig):
+    SUBMISSION_VERIFIER_API_KEY: str = os.getenv('SUBMISSION_VERIFIER_API_KEY', '')
+    
+    @staticmethod
+    def to_string():
+        return "SUBMISSION_VERIFIER_API_KEY={}".format(
+            AirnoiseSettings.SUBMISSION_VERIFIER_API_KEY
+        )

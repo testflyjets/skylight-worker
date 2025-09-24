@@ -1,8 +1,5 @@
 import logging
-import time
-from typing import Optional
 
-from redis import Redis
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -12,10 +9,8 @@ from selenium_worker.Requests.MontgomeryCountyAirParkTaskRQ import MontgomeryCou
 from selenium_worker.Responses.MontgomeryCountyAirParkTaskRS import MontgomeryCountyAirParkTaskRS
 from selenium_worker.Services.TaskService import TaskService, PageSetupConfig
 from selenium_worker.constants import STAGE_OBTAINED_PAGE
-from selenium_worker.exceptions import RetryException
 
 logger = logging.getLogger(__name__)
-
 
 class MontgomeryCountyAirParkTask(TaskService):
     RQ: MontgomeryCountyAirParkTaskRQ
@@ -23,8 +18,6 @@ class MontgomeryCountyAirParkTask(TaskService):
 
     def __init__(self):
         super().__init__()
-
-        # Enters the data and prepares the state for data processing
 
     def _execute_page_setup(self, method_name: str, config: PageSetupConfig) -> list[str]:
         """
@@ -129,23 +122,23 @@ class MontgomeryCountyAirParkTask(TaskService):
             self.fill_form_field(By.ID, 'First Name', 'first name', self.RQ.FirstName)
             self.fill_form_field(By.ID, 'Last Name', 'last name', self.RQ.LastName)
             self.fill_form_field(By.ID, 'email', 'e-mail address', self.RQ.Email)
-        #     self.fill_form_field(By.ID, 'Phone Number', 'phone number', self.RQ.PhoneNumber)
-        #     self.fill_form_field(By.ID, 'Street Address Cross Streets', 'street address', self.RQ.StreetAddress)
-        #     self.fill_form_field(By.ID, 'City', 'city address', self.RQ.CityAddress)
-        #     self.fill_form_field(By.ID, 'State', 'state address', self.RQ.StateAddress)
-        #     self.fill_form_field(By.ID, 'ZIP', 'ZIP address', self.RQ.ZIPAddress)
+        #     self.fill_form_field(By.ID, 'Phone Number', 'phone number', self.RQ.Phone)
+        #     self.fill_form_field(By.ID, 'Street Address Cross Streets', 'street address', self.RQ.Street)
+        #     self.fill_form_field(By.ID, 'City', 'city address', self.RQ.City)
+        #     self.fill_form_field(By.ID, 'State', 'state address', self.RQ.State)
+        #     self.fill_form_field(By.ID, 'ZIP', 'ZIP address', self.RQ.Zip)
 
-        #     # Fill date/time fields using JavaScript with computed properties
-        #     script = ("(function(){"
-        #               f"document.getElementsByName('form[Approximate Start Date Time]')[0].value = '{self.RQ.startDateTime}';"
-        #               f"document.getElementsByName('hidden[3_Approximate Start Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
-        #               f"document.getElementsByName('form[Approximate End Date Time]')[0].value = '{self.RQ.startDateTime}';"
-        #               f"document.getElementsByName('hidden[3_Approximate End Date Time]')[0].value = '{self.RQ.hiddenStartDateTime}';"
-        #               "})()")
-        #     self.driver.execute_script(script)
+            # Fill date/time fields using JavaScript with computed properties
+            script = ("(function(){"
+                      f"document.getElementsByName('form[Approximate Start Date Time]')[0].value = '{self.RQ.StartDateTime}';"
+                      f"document.getElementsByName('hidden[3_Approximate Start Date Time]')[0].value = '{self.RQ.HiddenStartDateTime}';"
+                      f"document.getElementsByName('form[Approximate End Date Time]')[0].value = '{self.RQ.StartDateTime}';"
+                      f"document.getElementsByName('hidden[3_Approximate End Date Time]')[0].value = '{self.RQ.HiddenStartDateTime}';"
+                      "})()")
+            self.driver.execute_script(script)
             
         #     # Fill the remaining fields
-        #     self.fill_form_field(By.ID, 'Airport source name code', 'airport source name code', self.RQ.AirportSourceNameCode)
+        #     self.fill_form_field(By.ID, 'Airport source name code', 'airport source name code', self.RQ.AirportIdent)
         #     self.fill_form_field(By.ID, 'Aircraft Type', 'aircraft type', self.RQ.AircraftType)
         #     self.fill_form_field(By.ID, 'Description Question', 'description/question', self.RQ.DescriptionOrQuestion + ' (' + self.RQ.SessionUID + ')')
         #     self.fill_form_field(By.ID, 'Response requested', 'response request', self.RQ.ResponseRequested)
@@ -171,8 +164,13 @@ class MontgomeryCountyAirParkTask(TaskService):
         # if 'Please complete all required fields!' in self.driver.page_source:
         #     raise RetryException('Failed to submit the form with provided data')
 
-        # Callback here
-        self.log('Sending callback to ' + self.RQ.CallbackUrl)
+        # Send submission verification callback
+        callback_success = self.send_submission_verification_callback(
+            verified=True
+        )
+
+        if not callback_success:
+            self.error('Failed to send verification callback')
         
         self.RS.Body = "All done successfully"
         return self.RS

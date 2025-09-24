@@ -32,8 +32,8 @@ def parse_event_time(event_time_str: str) -> Optional[datetime]:
 
 class MontgomeryCountyAirParkTaskRQ(ComplaintTaskRQ):
     # Computed properties (will be set in __init__)
-    startDateTime: str = ''
-    hiddenStartDateTime: str = ''
+    StartDateTime: str = ''
+    HiddenStartDateTime: str = ''
 
     def __init__(self, j: dict):
         # Call parent constructor first
@@ -48,11 +48,11 @@ class MontgomeryCountyAirParkTaskRQ(ComplaintTaskRQ):
         event_datetime = parse_event_time(self.EventTime)
         if event_datetime is not None:
             # Format for the form fields (same format as before)
-            self.startDateTime = event_datetime.strftime('%d-%m-%Y %H:%M')
-            self.hiddenStartDateTime = event_datetime.strftime('%m/%d/%Y %H:%M')
+            self.StartDateTime = event_datetime.strftime('%d-%m-%Y %H:%M')
+            self.HiddenStartDateTime = event_datetime.strftime('%m/%d/%Y %H:%M')
         else:
-            self.startDateTime = ''
-            self.hiddenStartDateTime = ''
+            self.StartDateTime = ''
+            self.HiddenStartDateTime = ''
 
 class MontgomeryCountyAirParkTaskRQEncoder(JSONEncoder):
     def default(self, o):

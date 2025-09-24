@@ -5,6 +5,7 @@ class ComplaintTaskRQ:
     SessionUID: str = ''
     
     # Complaint-specific fields
+    ComplaintUuid: str = ''
     ComplaintType: str = ''
     AirportIdent: str = ''
     TimeZone: str = ''
@@ -52,6 +53,8 @@ class ComplaintTaskRQ:
         Errors = []
         if not self.Type:
             Errors.append('Missing `Type` value')
+        if not self.ComplaintUuid:
+            Errors.append('Missing `ComplaintUuid` value')
         if not self.ComplaintType:
             Errors.append('Missing `ComplaintType` value')
         if not self.AirportIdent:

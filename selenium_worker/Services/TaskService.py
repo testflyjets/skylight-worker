@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import random
@@ -10,6 +11,7 @@ from typing import Optional
 from uuid import uuid4
 from zipfile import is_zipfile
 
+import requests
 import undetected_chromedriver as uc
 from redis import Redis
 from selenium.webdriver import ChromeOptions, FirefoxOptions
@@ -23,6 +25,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium_worker import config as cfg
 from selenium_worker.Requests.ComplaintTaskRQ import ComplaintTaskRQ
 from selenium_worker.Requests.MontgomeryCountyAirParkTaskRQ import MontgomeryCountyAirParkTaskRQ
+from selenium_worker.Requests.SubmissionVerificationTaskRQ import SubmissionVerificationTaskRQ
 from selenium_worker.Responses.ComplaintTaskRS import ComplaintTaskRS
 from selenium_worker.enums import BrowserDriverType
 from selenium_worker.utils import get_actual_ip_address, get_proxied_ip_address
@@ -42,7 +45,6 @@ minimum_recaptcha_scores = {
 }
 
 from selenium_worker.utils import check_recaptcha_score
-
 
 @dataclass
 class PageSetupConfig:
@@ -171,12 +173,14 @@ class TaskService:
 
         if self.driver is None:
             raise RuntimeError('Cannot find any browser driver')
+        
         logger.info(f'Browser {browser_driver_type} was created successfully')
 
     def init_browser(self, browser_driver_type: BrowserDriverType, task_type: str):
         logger.info('Initializing browser ...')
         self.user_data_dir = os.path.join(cfg.CacheSettings.DATA_PATH, uuid4().__str__())
         logger.info(f'User data directory is {self.user_data_dir}')
+        
         if browser_driver_type == BrowserDriverType.Chrome and os.path.exists(
                 os.path.join(cfg.CacheSettings.GLOBALCACHE_PATH,
                              f'{task_type}.zip')) and cfg.CacheSettings.CACHE_USE is True:  # Check before copying
@@ -192,12 +196,13 @@ class TaskService:
             else:
                 logger.info(f"Skipping using cache from ZIP file {task_type}.zip")
 
-        self.create_driver(browser_driver_type,
-                           browser_binary_path=cfg.BrowserSettings.BROWSER_BINARY_PATH,
-                           user_data_dir=self.user_data_dir,  # This is browser profile path
-                           browser_data_dir=cfg.CacheSettings.BROWSER_PATH,
-                           disk_cache_dir=cfg.CacheSettings.DISK_PATH
-                           )
+        self.create_driver(
+            browser_driver_type,
+            browser_binary_path=cfg.BrowserSettings.BROWSER_BINARY_PATH,
+            user_data_dir=self.user_data_dir,  # This is browser profile path
+            browser_data_dir=cfg.CacheSettings.BROWSER_PATH,
+            disk_cache_dir=cfg.CacheSettings.DISK_PATH
+        )
 
         try:
             self.driver.delete_all_cookies()
@@ -440,6 +445,61 @@ class TaskService:
         for char in text:
             time.sleep(random.uniform(delay_from, delay_to))
             element.send_keys(char)
+
+    def send_submission_verification_callback(self,
+                                            verified: bool = True,
+                                            submitter_ip: str = '',
+                                            error_message: str = '',
+                                            error_backtrace: str = '',
+                                            submission_details: dict = None) -> bool:
+        """
+        Send a submission verification callback to the CallbackUrl from self.RQ.
+        Creates a SubmissionVerificationTaskRQ using data from self.RQ and the provided parameters.
+
+        Args:
+            verified: Whether the submission was verified successfully
+            submitter_ip: IP address of the submitter
+            error_message: Error message if verification failed
+            error_backtrace: Error backtrace if verification failed
+            submission_details: Additional submission details
+
+        Returns:
+            bool: True if callback was sent successfully, False otherwise
+        """
+        try:
+            # Create verification request using data from self.RQ
+            verification_request = SubmissionVerificationTaskRQ({})
+            verification_request.Id = self.RQ.ComplaintUuid
+            verification_request.SubmissionVerified = verified
+            verification_request.SubmitterIp = submitter_ip
+            verification_request.SubmissionError = error_message
+            verification_request.ErrorBacktrace = error_backtrace
+            verification_request.SubmissionDetails = submission_details if submission_details is not None else {}
+
+            # Send POST request
+            headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+
+            self.log(f'Sending verification callback to {self.RQ.CallbackUrl}')
+            response = requests.post(
+                self.RQ.CallbackUrl,
+                data=json.dumps(verification_request.to_request_body()),
+                headers=headers,
+                timeout=30
+            )
+
+            if response.status_code in [200, 201, 202]:
+                self.log(f'Callback sent successfully. Status: {response.status_code}')
+                return True
+            else:
+                self.error(f'Callback failed with status {response.status_code}: {response.text}')
+                return False
+
+        except Exception as e:
+            self.error(f'Failed to send verification callback: {str(e)}')
+            return False
 
     def find_and_verify_element(self, locator_type, locator_value: str, field_name: str) -> WebElement:
         """
