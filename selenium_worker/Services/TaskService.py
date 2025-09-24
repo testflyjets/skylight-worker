@@ -59,9 +59,15 @@ class PageSetupConfig:
     rds: Optional[Redis] = None
 
 class ProxyConfig:
-    proxiy_ip: str = ''
+    proxy_ip: str = ''
     proxy_change_attempts: int = 0
     recaptcha_score: int = 0
+    
+    def reset(self):
+        """Reset proxy configuration to default values for new task execution."""
+        self.proxy_ip = ''
+        self.proxy_change_attempts = 0
+        self.recaptcha_score = 0
 
 class TaskService:
     RQ: ComplaintTaskRQ
@@ -351,6 +357,9 @@ class TaskService:
             proxy_variation: Optional[str] = None):
         logger.info('Attempting to find a proxy with reCAPTCHA score >= {}'.format(recaptcha_score_threshold))
         
+        # Reset the proxy metrics 
+        self.proxy_config.reset()
+        
         for attempt in range(max_attempts):
             try:
                 self.change_proxy(print_ip_addresses, proxy_variation, recaptcha_score_threshold)
@@ -433,7 +442,7 @@ class TaskService:
             try:
                 # For proxy change obtain it via Selenium because request-based will obtain it from Redis
                 proxied_ip_address = get_proxied_ip_address(self.driver)
-                self.proxy_config.proxied_ip = proxied_ip_address
+                self.proxy_config.proxy_ip = proxied_ip_address
                 logger.info('Proxied IP address: {}'.format(proxied_ip_address))
             except Exception as e:
                 logger.warning('Failed to obtain proxied IP address: {}'.format(e))
@@ -489,7 +498,7 @@ class TaskService:
             verification_request = SubmissionVerificationTaskRQ({})
             verification_request.Id = self.RQ.ComplaintUuid
             verification_request.SubmissionVerified = verified
-            verification_request.SubmitterIp = self.proxy_config.proxiy_ip
+            verification_request.SubmitterIp = self.proxy_config.proxy_ip
             verification_request.SubmissionError = error_message
             verification_request.ErrorBacktrace = error_backtrace
             verification_request.SubmissionDetails = submission_details if submission_details is not None else {}
