@@ -16,9 +16,32 @@ OxyLabs account with residential/mobile proxies traffic available
 
 # Running
 
+## Single Worker
+
 Worker can be started by running `python3 -m selenium_worker.app` - it should start Chrome browser and open it on about:
 blank page.
 Browser will have chrome proxy plugin added to its extensions list.
+
+## Multiple Workers (Recommended)
+
+For production use, run multiple workers using supervisor:
+
+```bash
+# Install supervisor
+brew install supervisor  # macOS
+# or pip install supervisor
+
+# Start 4 workers
+./scripts/supervisor_macos_clean.sh start 4 KGAI
+
+# Check status
+./scripts/supervisor_macos_clean.sh status
+
+# Stop workers
+./scripts/supervisor_macos_clean.sh stop
+```
+
+See `docs/SUPERVISOR_MULTI_WORKER_GUIDE.md` for complete documentation.
 
 # Sending tasks to worker
 

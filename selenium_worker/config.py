@@ -34,11 +34,6 @@ broker_transport_options = {
     'fanout_prefix': True,
     'fanout_patterns': True,
     'socket_keepalive': True,
-    'socket_keepalive_options': {
-        'TCP_KEEPIDLE': 1,
-        'TCP_KEEPINTVL': 3,
-        'TCP_KEEPCNT': 5,
-    },
     'retry_on_timeout': True,
     'health_check_interval': 30,
 }
@@ -47,11 +42,6 @@ broker_transport_options = {
 result_backend_transport_options = {
     'retry_on_timeout': True,
     'socket_keepalive': True,
-    'socket_keepalive_options': {
-        'TCP_KEEPIDLE': 1,
-        'TCP_KEEPINTVL': 3,
-        'TCP_KEEPCNT': 5,
-    },
 }
 
 load_dotenv()
@@ -156,7 +146,7 @@ class BrowserSettings(BaseConfig):
 
 class RedisSettings(BaseConfig):
     REDIS_HOST: Optional[str] = '127.0.0.1' if not os.getenv('REDIS_HOST') else os.getenv('REDIS_HOST')
-    REDIS_PORT: Optional[int] = 6379 if not os.getenv('REDIS_PORT') else os.getenv('REDIS_PORT')
+    REDIS_PORT: Optional[int] = 6379 if not os.getenv('REDIS_PORT') else int(os.getenv('REDIS_PORT'))
 
     @staticmethod
     def rds() -> redis.client.Redis:

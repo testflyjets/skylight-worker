@@ -353,7 +353,26 @@ def work(self, request, job_uid: str):
 
 def signal_handler(signum, frame):
     """Handle shutdown signals gracefully"""
-    logger.info(f'Received signal {signum}, shutting down...')
+    global task_service
+    global display
+
+    logger.info(f'Received signal {signum}, shutting down gracefully...')
+
+    try:
+        # Cleanup browser and task service
+        if task_service is not None:
+            logger.info('Shutting down task service...')
+            task_service.shutdown()
+
+        # Cleanup display
+        if display is not None:
+            logger.info('Stopping virtual display...')
+            display.stop()
+
+    except Exception as e:
+        logger.error(f'Error during signal handler cleanup: {e}')
+
+    logger.info('Graceful shutdown complete')
     sys.exit(0)
 
 if __name__ == '__main__' or __name__ == 'main':
