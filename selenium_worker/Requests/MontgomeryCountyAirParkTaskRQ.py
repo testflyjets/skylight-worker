@@ -1,9 +1,7 @@
 from json import JSONEncoder
 from datetime import datetime
 from typing import Optional
-
 from selenium_worker.Requests.ComplaintTaskRQ import ComplaintTaskRQ
-
 
 def parse_event_time(event_time_str: str) -> Optional[datetime]:
     """

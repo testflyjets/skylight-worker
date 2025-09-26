@@ -91,12 +91,12 @@ class TaskService:
         # First, try to gracefully close the browser through SeleniumBase
         if self.SB:
             try:
-                # Try to quit the driver first
-                if self.driver:
-                    try:
-                        self.driver.quit()
-                    except Exception as e:
-                        self.log(f"Error during driver.quit(): {e}")
+                # # Try to quit the driver first
+                # if self.driver:
+                #     try:
+                #         self.driver.quit()
+                #     except Exception as e:
+                #         self.log(f"Error during driver.quit(): {e}")
 
                 # Then close SeleniumBase
                 next(self._sb_gen)
@@ -107,46 +107,46 @@ class TaskService:
             except Exception as e:
                 self.log(f"Error during SeleniumBase shutdown: {e}")
 
-        # Force kill any remaining Chrome processes that might be orphaned
-        try:
-            current_pid = os.getpid()
-            current_process = psutil.Process(current_pid)
+        # # Force kill any remaining Chrome processes that might be orphaned
+        # try:
+        #     current_pid = os.getpid()
+        #     current_process = psutil.Process(current_pid)
 
-            # Find all Chrome processes that are children of this worker process
-            chrome_processes = []
-            for child in current_process.children(recursive=True):
-                try:
-                    if 'chrome' in child.name().lower() or 'chromium' in child.name().lower():
-                        chrome_processes.append(child)
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
+        #     # Find all Chrome processes that are children of this worker process
+        #     chrome_processes = []
+        #     for child in current_process.children(recursive=True):
+        #         try:
+        #             if 'chrome' in child.name().lower() or 'chromium' in child.name().lower():
+        #                 chrome_processes.append(child)
+        #         except (psutil.NoSuchProcess, psutil.AccessDenied):
+        #             continue
 
-            # Terminate Chrome processes
-            for chrome_proc in chrome_processes:
-                try:
-                    self.log(f"Terminating Chrome process {chrome_proc.pid}")
-                    chrome_proc.terminate()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
+        #     # Terminate Chrome processes
+        #     for chrome_proc in chrome_processes:
+        #         try:
+        #             self.log(f"Terminating Chrome process {chrome_proc.pid}")
+        #             chrome_proc.terminate()
+        #         except (psutil.NoSuchProcess, psutil.AccessDenied):
+        #             continue
 
-            # Wait a moment for graceful termination
-            if chrome_processes:
-                psutil.wait_procs(chrome_processes, timeout=5)
+        #     # Wait a moment for graceful termination
+        #     if chrome_processes:
+        #         psutil.wait_procs(chrome_processes, timeout=5)
 
-            # Force kill any that didn't terminate gracefully
-            for chrome_proc in chrome_processes:
-                try:
-                    if chrome_proc.is_running():
-                        self.log(f"Force killing Chrome process {chrome_proc.pid}")
-                        chrome_proc.kill()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
+        #     # Force kill any that didn't terminate gracefully
+        #     for chrome_proc in chrome_processes:
+        #         try:
+        #             if chrome_proc.is_running():
+        #                 self.log(f"Force killing Chrome process {chrome_proc.pid}")
+        #                 chrome_proc.kill()
+        #         except (psutil.NoSuchProcess, psutil.AccessDenied):
+        #             continue
 
-        except Exception as e:
-            self.log(f"Error during Chrome process cleanup: {e}")
+        # except Exception as e:
+        #     self.log(f"Error during Chrome process cleanup: {e}")
 
-        # Clear driver reference
-        self.driver = None
+        # # Clear driver reference
+        # self.driver = None
 
         if remove_user_data and self.user_data_dir:
             try:
@@ -552,7 +552,7 @@ class TaskService:
         try:
             # Create verification request using data from self.RQ
             verification_request = SubmissionVerificationTaskRQ({})
-            verification_request.Id = self.RQ.ComplaintUuid
+            verification_request.Id = self.RQ.Id
             verification_request.SubmissionVerified = verified
             verification_request.SubmitterIp = self.proxy_config.proxy_ip
             verification_request.SubmissionError = error_message
